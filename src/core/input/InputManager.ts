@@ -171,10 +171,9 @@ export class InputManager implements InputState {
       updatePointer(e);
       this.markMouse();
       const a = mouseAction(e.button);
-      if (a) {
-        e.preventDefault();
-        this.state.press(a, `mouse:${e.button}`);
-      }
+      // No preventDefault here: it would suppress the compatibility mouse
+      // events Phaser's own input plugin listens to.
+      if (a) this.state.press(a, `mouse:${e.button}`);
     };
     const onPointerUp = (e: PointerEvent) => {
       if (!isMouse(e)) return;
