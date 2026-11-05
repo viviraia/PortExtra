@@ -5,6 +5,8 @@ import { existsSync } from 'node:fs';
 const preinstalled = '/opt/pw-browsers/chromium';
 // Dedicated port so a dev's own `npm run preview` (4173) is never reused by mistake.
 const PORT = 4180;
+// Build into a private directory so concurrent `npm run build`s can't swap files under the server.
+const OUT = 'node_modules/.e2e-dist';
 const launchOptions = existsSync(preinstalled) ? { executablePath: preinstalled } : {};
 
 export default defineConfig({
@@ -22,7 +24,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+    command: `npm run typecheck && npx vite build --outDir ${OUT} --emptyOutDir && npx vite preview --outDir ${OUT} --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

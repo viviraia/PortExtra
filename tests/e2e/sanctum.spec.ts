@@ -6,11 +6,11 @@ async function selectRow(page: Page, kind: string, id?: string): Promise<string>
   const picked = await page.evaluate(
     ([k, wanted]) => {
       const s = (window as any).__game.scene.getScene('Sanctum');
-      const save = JSON.parse(localStorage.getItem('hollow-spire-save') ?? '{}');
       const idx = s.rows.findIndex((r: any) => {
         if (!r.selectable || r.action.kind !== k) return false;
         if (wanted) return r.action.id === wanted;
-        if (k === 'unlock') return !(save.unlocked ?? []).includes(r.action.id);
+        // Locked armory rows show an ember price instead of OWNED.
+        if (k === 'unlock') return r.right?.currency === 'embers';
         return true;
       });
       if (idx < 0) return null;
