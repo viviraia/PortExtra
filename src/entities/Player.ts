@@ -304,9 +304,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.doJump(JUMP_V * 0.85, false);
       return;
     }
+    // Reached the top of the ladder: stand on its top rung instead of popping
+    // off and falling back down (ladders often poke up through floor holes).
+    const b = this.body;
+    const cx = b.center.x;
+    const ladderBelowFeet = this.tileUnder(cx, b.bottom + 2) === Tile.Ladder;
+    if (my <= 0 && ladderBelowFeet && this.tileUnder(cx, b.bottom - 3) !== Tile.Ladder) {
+      const topY = Math.floor((b.bottom + 2) / TILE) * TILE;
+      b.y = topY - b.height;
+      b.velocity.y = 0;
+      // Step off sideways onto the adjacent floor (feet are level with it).
+      if (Math.abs(input.moveX) > 0.5) {
+        this.exitClimb();
+        this.body.velocity.x = input.moveX * RUN_SPEED;
+      }
+      return;
+    }
     if (!this.overlapsLadder()) {
       this.exitClimb();
-      if (my < 0) this.body.velocity.y = -120; // pop up over the top
       return;
     }
     if (this.grounded && my > 0) this.exitClimb();

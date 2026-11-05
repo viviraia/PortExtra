@@ -142,6 +142,7 @@ export class GameScene extends Phaser.Scene implements World {
     this.ambience = new Ambience(this, biome);
 
     const cam = this.cameras.main;
+    cam.setZoom(1);
     cam.setBounds(0, 0, this.floor.worldW, this.floor.worldH);
     cam.startFollow(this.player, true, 0.12, 0.12, 0, 20);
     cam.setDeadzone(24, 28);
@@ -587,6 +588,12 @@ export class GameScene extends Phaser.Scene implements World {
   }
 
   dropItem(item: ItemInstance, x: number, y: number, opts: { price?: number; pop?: boolean } = {}): void {
+    // Never place a drop inside a wall (e.g. swapped next to one): slide toward the player.
+    for (let i = 0; i < 6 && this.isSolidAt(x, y - 4); i++) x += Math.sign(this.player.centerX - x || 1) * (TILE / 2);
+    if (this.isSolidAt(x, y - 4)) {
+      x = this.player.centerX;
+      y = this.player.body.bottom;
+    }
     // Snap to the ground below.
     let gy = y;
     for (let i = 0; i < 20 && !this.isSolidAt(x, gy + 1) && this.floor.tileAt(Math.floor(x / TILE), Math.floor((gy + 1) / TILE)) !== Tile.Platform; i++) gy += TILE / 2;
@@ -714,9 +721,14 @@ export class GameScene extends Phaser.Scene implements World {
     saves.data.stats.deepest = Math.max(saves.data.stats.deepest, r.floor);
     saves.save();
     this.player.body.setVelocity(0, 0);
-    this.player.setVisible(false);
+    this.player.body.setAllowGravity(false);
+    // Dissolve into the portal: fade, drift toward its centre, purple sparks.
+    this.tweens.add({ targets: this.player, alpha: 0, x: this.exitPortal?.x ?? this.player.x, duration: 380, ease: 'Cubic.easeIn' });
+    this.player.setTintFill(0xc9a6ff);
     this.juice.ring(this.player.centerX, this.player.centerY, 40, 0x9a6aff, 400);
-    this.cameras.main.fadeOut(450, 0, 0, 0);
+    this.juice.burst(this.player.centerX, this.player.centerY, { count: 18, tint: [0x9a6aff, 0xe0c8ff], speed: [20, 90], gravity: -120, life: [300, 600], blendAdd: true });
+    this.cameras.main.zoomTo(1.12, 500, 'Cubic.easeIn');
+    this.cameras.main.fadeOut(500, 0, 0, 0);
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.restart());
   }
 

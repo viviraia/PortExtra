@@ -11,10 +11,16 @@
       html, body { margin: 0; padding: 0; height: 100%; background: #0b0a12; overflow: hidden; touch-action: none; overscroll-behavior: none; -webkit-user-select: none; user-select: none; }
       #game { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
       #game canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+      #rotate { display: none; position: fixed; inset: 0; z-index: 10; background: #0b0a12; color: #e8dcc8;
+        font: 16px/1.4 monospace; text-align: center; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
+      #rotate .phone { width: 34px; height: 56px; border: 3px solid #e8dcc8; border-radius: 6px; animation: turn 2s ease-in-out infinite; }
+      @keyframes turn { 0%, 30% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+      @media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
     </style>
   </head>
   <body>
     <div id="game"></div>
+    <div id="rotate"><div class="phone"></div><div>Rotate your device<br />to climb the Spire</div></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

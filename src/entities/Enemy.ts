@@ -68,6 +68,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private aggro = false;
   private eliteGlow: Phaser.GameObjects.Image | null = null;
   private hpBar: Phaser.GameObjects.Graphics | null = null;
+  private hpBarFill = -1;
+  private hpBarX = 0;
+  private hpBarY = 0;
   private lastHurtAt = -9999;
   readonly flying: boolean;
 
@@ -171,10 +174,20 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       return;
     }
     if (!this.hpBar) this.hpBar = this.world.stage.add.graphics().setDepth(890);
-    const g = this.hpBar.setVisible(true).clear();
     const w = Math.max(14, this.def.w + 4);
     const x = Math.round(this.centerX - w / 2);
     const y = Math.round(this.body.top - 6);
+    // Only rebuild the geometry when the bar actually changed; otherwise just move it.
+    const fill = Math.max(0, Math.round((w * this.hp) / this.maxHp));
+    this.hpBar.setVisible(true);
+    if (fill === this.hpBarFill) {
+      this.hpBar.setPosition(x - this.hpBarX, y - this.hpBarY);
+      return;
+    }
+    this.hpBarFill = fill;
+    this.hpBarX = x;
+    this.hpBarY = y;
+    const g = this.hpBar.setPosition(0, 0).clear();
     g.fillStyle(0x000000, 0.7).fillRect(x - 1, y - 1, w + 2, 4);
     g.fillStyle(this.elite ? 0xffb02e : 0xd8383a, 1).fillRect(x, y, Math.max(0, Math.round((w * this.hp) / this.maxHp)), 2);
   }
@@ -407,6 +420,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   telegraph(): void {
     this.playAnim('windup', true);
     this.setTint(0xff6a6a);
+    // A red glint above the darkness layer so windups read even in unlit areas.
+    const sc = this.world.stage;
+    if (sc.textures.exists(FX.glow)) {
+      const g = sc.add.image(this.centerX, this.body.top - 2, FX.glow).setTint(0xff3a3a).setBlendMode(Phaser.BlendModes.ADD).setDepth(805).setScale(0.3).setAlpha(0.9);
+      sc.tweens.add({ targets: g, alpha: 0, scale: 0.15, duration: 320, ease: 'Cubic.easeIn', onComplete: () => g.destroy() });
+    }
     this.world.stage.time.delayedCall(90, () => {
       if (this.alive && !this.frozen) this.clearTint();
     });

@@ -25,6 +25,8 @@ const MAGNET_RADIUS = 34;
 export class PickupSystem {
   readonly group: Phaser.Physics.Arcade.Group;
   private items: Loose[] = [];
+  private coinStreak = 0;
+  private lastCoinAt = -9999;
 
   constructor(private world: World) {
     this.group = world.stage.physics.add.group({ allowGravity: true, bounceY: 0.45, dragX: 120 });
@@ -106,7 +108,13 @@ export class PickupSystem {
     switch (it.kind) {
       case 'coin':
         w.addCoins(it.value, x, y);
-        audio.sfx('coin', { volume: 0.4, pitch: 1 + Math.random() * 0.2 });
+        {
+          // Rapid pickups climb in pitch for a satisfying jingle.
+          const t = this.world.now;
+          this.coinStreak = t - this.lastCoinAt < 350 ? Math.min(this.coinStreak + 1, 14) : 0;
+          this.lastCoinAt = t;
+          audio.sfx('coin', { volume: 0.4, pitch: 1 + this.coinStreak * 0.045 });
+        }
         break;
       case 'ember':
         w.addEmbers(it.value, x, y);
