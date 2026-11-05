@@ -60,6 +60,7 @@ export class GameScene extends Phaser.Scene implements World {
   private paused = false;
   /** Modal UI open (merchant, swap, altar): gameplay input suspended. */
   modalOpen = false;
+  private simTime = 1000;
   private unsubs: (() => void)[] = [];
   private firstHitShieldUsed = false;
   private roomsVisited = new Set<number>();
@@ -72,8 +73,13 @@ export class GameScene extends Phaser.Scene implements World {
     return this;
   }
 
+  /**
+   * Simulation clock in ms. Unlike scene.time.now it stops while paused, while
+   * a modal is open and during hit-stop, so windups/cooldowns never advance
+   * behind the player's back.
+   */
   get now(): number {
-    return this.time.now;
+    return this.simTime;
   }
 
   get coins(): number {
@@ -99,6 +105,7 @@ export class GameScene extends Phaser.Scene implements World {
     this.ending = false;
     this.paused = false;
     this.modalOpen = false;
+    this.simTime = 1000;
     this.firstHitShieldUsed = false;
     this.roomsVisited.clear();
 
@@ -283,24 +290,23 @@ export class GameScene extends Phaser.Scene implements World {
     }
     if (this.paused) return;
 
-    const frozen = this.juice.frozen;
-    if (frozen !== this.physics.world.isPaused) {
-      if (frozen) this.physics.pause();
+    // Hit-stop and open modals (merchant, swap, altar) freeze the world.
+    const hold = this.juice.frozen || this.modalOpen;
+    if (hold !== this.physics.world.isPaused) {
+      if (hold) this.physics.pause();
       else this.physics.resume();
     }
-    if (frozen) {
+    this.time.paused = this.modalOpen;
+    if (hold) {
       this.lighting.update(this.now);
       return;
     }
 
+    this.simTime += Math.min(deltaMs, 50);
     if (!this.ending) this.run.timeMs += deltaMs;
 
-    if (!this.modalOpen) {
-      this.player.tick(dt);
-      if (input.pressed('potion')) this.drinkPotion();
-    } else {
-      this.player.body.velocity.x *= 0.8;
-    }
+    this.player.tick(dt);
+    if (input.pressed('potion')) this.drinkPotion();
     for (const e of this.enemies) if (e.active) e.tick(dt);
     if (this.enemies.some((e) => !e.active)) this.enemies = this.enemies.filter((e) => e.active);
     this.projectiles.update(dt);
@@ -654,6 +660,7 @@ export class GameScene extends Phaser.Scene implements World {
     if (this.paused) {
       this.physics.pause();
       this.tweens.pauseAll();
+      this.time.paused = true;
       audio.setMuffle(0.8);
       bus.emit('game:pause', { paused: true });
       if (this.scene.get('Pause')) this.scene.launch('Pause');
@@ -666,6 +673,7 @@ export class GameScene extends Phaser.Scene implements World {
     this.paused = false;
     this.physics.resume();
     this.tweens.resumeAll();
+    this.time.paused = false;
     audio.setMuffle(0);
     bus.emit('game:pause', { paused: false });
     if (this.scene.isActive('Pause')) this.scene.stop('Pause');
