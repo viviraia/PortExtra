@@ -7,6 +7,9 @@ import { GameScene } from './scenes/GameScene';
 import { HUDScene } from './scenes/HUDScene';
 import { DeathScene } from './scenes/DeathScene';
 import { TouchScene } from './core/input/TouchScene';
+import { ModalScene } from './scenes/ModalScene';
+import { PauseScene } from './scenes/PauseScene';
+import { SettingsScene } from './scenes/SettingsScene';
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -28,7 +31,7 @@ const game = new Phaser.Game({
     arcade: { gravity: { x: 0, y: GRAVITY }, debug: false, tileBias: 20 },
   },
   fps: { target: 60, smoothStep: true },
-  scene: [BootScene, TitleScene, SanctumScene, GameScene, HUDScene, TouchScene, DeathScene],
+  scene: [BootScene, TitleScene, SanctumScene, GameScene, HUDScene, TouchScene, ModalScene, PauseScene, SettingsScene, DeathScene],
 });
 
 if (IS_DEBUG) (window as any).__game = game;

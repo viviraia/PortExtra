@@ -1,74 +1,72 @@
-import type { AiBrain } from './types';
+import { audio } from '../../core/audio';
 import type { Enemy } from '../Enemy';
+import { PhaseBrain } from './util';
 
-type Phase = 'patrol' | 'chase' | 'windup' | 'strike' | 'recover';
+type Phase = 'patrol' | 'chase' | 'windup' | 'recover';
 
 /**
- * Reference brain: patrols, chases when aggro, telegraphs then swings.
- * params: aggroRange, attackRange, windupMs, cooldownMs, reach
+ * Shambler: patrols, chases when aggro, telegraphs then swings with a small
+ * forward lurch. params: aggroRange, attackRange, windupMs, cooldownMs, reach
  */
-export class WalkerBrain implements AiBrain {
+export class WalkerBrain extends PhaseBrain<Phase> {
   phase: Phase = 'patrol';
-  until = 0;
-  nextAttack = 0;
-  patrolFlip = 0;
+
+  onAggro(e: Enemy): void {
+    audio.sfx('enemyAlert', { volume: 0.35 });
+    this.set(e, 'chase');
+  }
 
   update(e: Enemy): void {
     const p = e.def.params;
-    const now = e.now;
     const range = p.attackRange ?? 22;
+    if (e.player.state2 === 'dead') {
+      e.halt();
+      e.playAnim('idle');
+      return;
+    }
     switch (this.phase) {
-      case 'patrol': {
-        e.playAnim('move');
-        if (!e.walk(e.facing, 0.5) || now > this.patrolFlip) {
-          e.facing = (e.facing * -1) as 1 | -1;
-          this.patrolFlip = now + 2000 + Math.random() * 2500;
-        }
-        if (e.isAggro) this.phase = 'chase';
+      case 'patrol':
+        this.patrol(e);
+        if (e.isAggro) this.set(e, 'chase');
         break;
-      }
       case 'chase': {
         const dx = e.dxToPlayer();
         const dy = e.dyToPlayer();
-        if (Math.abs(dx) < range && Math.abs(dy) < 28 && now >= this.nextAttack) {
+        if (Math.abs(dx) < range + 4 && Math.abs(dy) < 26 && this.ready(e)) {
           e.facePlayer();
           e.halt();
           e.telegraph();
-          this.phase = 'windup';
-          this.until = now + (p.windupMs ?? 450);
+          this.set(e, 'windup', this.windupMs(e));
           break;
         }
-        if (Math.abs(dx) > range * 0.7) {
-          if (!e.walk(Math.sign(dx))) e.playAnim('idle');
-          else e.playAnim('move');
+        if (Math.abs(dx) > range * 0.75) {
+          if (e.walk(Math.sign(dx))) e.playAnim('move');
+          else e.playAnim('idle');
         } else {
           e.halt();
           e.facePlayer();
           e.playAnim('idle');
         }
-        if (e.distToPlayer() > (p.aggroRange ?? 140) * 2.2) this.phase = 'patrol';
+        if (e.distToPlayer() > (p.aggroRange ?? 140) * 2.5) this.set(e, 'patrol');
         break;
       }
       case 'windup':
         e.halt();
-        if (now >= this.until) {
-          e.meleeAttack({ reach: p.reach ?? 16, height: e.def.h + 4 });
-          this.phase = 'recover';
-          this.until = now + 380;
-          this.nextAttack = now + (p.cooldownMs ?? 1100) * e.cooldownMult;
+        if (this.done(e)) {
+          e.body.velocity.x = e.facing * 70 * e.slowMult; // lurch
+          e.meleeAttack({ reach: p.reach ?? 16, height: e.def.h + 6 });
+          this.cooldown(e);
+          this.set(e, 'recover', 420);
         }
         break;
       case 'recover':
         e.halt();
-        if (now >= this.until) this.phase = 'chase';
+        if (this.done(e)) this.set(e, 'chase');
         break;
-      default:
-        this.phase = 'chase';
     }
   }
 
-  interrupt(): void {
-    this.phase = 'recover';
-    this.until = 0;
+  protected override onInterrupt(e: Enemy): void {
+    this.set(e, 'recover', 300);
   }
 }

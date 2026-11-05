@@ -55,6 +55,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   heavy = false;
   /** Multiplier on incoming damage (armored elites, shields...). */
   damageTakenMult = 1;
+  /** While true, player hits pass through (ghost phasing, mimic burrow...). */
+  intangible = false;
+  /** Brains may set this to ignore the normal aggro trigger (e.g. dormant mimics). */
+  dormant = false;
+  private losCheckedAt = -9999;
+  private losCached = false;
   private statuses = new Map<StatusId, ActiveStatus>();
   private contactReadyAt = 0;
   private stunUntil = 0;
@@ -136,7 +142,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (!this.alive) return;
     this.updateStatuses();
     if (!this.alive) return;
-    if (!this.aggro && this.distToPlayer() < (this.def.params.aggroRange ?? 140) && this.seesPlayer()) {
+    if (!this.aggro && !this.dormant && this.distToPlayer() < (this.def.params.aggroRange ?? 140) && this.seesPlayerCached()) {
       this.aggro = true;
       this.brain.onAggro?.(this);
     }
@@ -183,7 +189,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   applyStatus(s: StatusId, sourceDamage: number, durationMs?: number, potency = 1): void {
     const def = statusDefaults[s];
     const until = this.now + (durationMs ?? def.durationMs) * (this.heavy && (s === 'stun' || s === 'freeze') ? 0.5 : 1);
-    const tickDmg = def.dpsFrac ? Math.max(1, sourceDamage * def.dpsFrac * potency) : 0;
+    // dpsFrac is damage per second as a fraction of the applying hit; convert to per-tick.
+    const tickDmg = def.dpsFrac ? Math.max(1, sourceDamage * def.dpsFrac * potency * ((def.tickMs ?? 500) / 1000)) : 0;
     const prev = this.statuses.get(s);
     this.statuses.set(s, {
       until: Math.max(prev?.until ?? 0, until),
@@ -220,6 +227,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   /** Apply a player hit. Returns the damage actually dealt. */
   hurt(hit: PlayerHit): number {
     if (!this.alive) return 0;
+    if (this.intangible) return 0;
     if (hit.amount <= 0) return 0;
     const blocked = this.brain.blocks?.(this, hit) ?? false;
     let amount = hit.amount * (hit.pierceArmor ? 1 : this.damageTakenMult);
@@ -252,7 +260,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.brain.onAggro?.(this);
     }
     // Feedback
-    this.world.juice.hitFlash(this, 60);
+    this.world.juice.hitFlash(this, 60, 0xffffff, () => {
+      if (this.frozen) this.setTint(STATUS_COLORS.freeze);
+    });
     this.world.juice.fx(this.centerX - Math.sign(hit.kbX) * 2, this.centerY, 'fx-hit-spark', { tint: hit.color, add: true });
     this.world.juice.burst(this.centerX, this.centerY, { count: hit.crit ? 10 : 5, tint: [0xffffff, hit.color ?? 0xffe0a0], speed: [60, 160], life: [120, 300], gravity: 200, angle: hit.kbX >= 0 ? [-60, 60] : [120, 240] });
     if (hit.hitstopMs) this.world.juice.hitstop(hit.hitstopMs * (hit.crit ? 1.5 : 1));
@@ -313,6 +323,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const key = enemyAnim(this.def.id, a);
     if (!this.scene.anims.exists(key)) return;
     if (!force && this.anims.currentAnim?.key === key && this.anims.isPlaying) return;
+    if (!force && (a === 'idle' || a === 'move') && this.anims.isPlaying) {
+      const cur = this.anims.currentAnim?.key;
+      if (cur === enemyAnim(this.def.id, 'attack') || cur === enemyAnim(this.def.id, 'hurt')) return;
+    }
     this.play(key, !force);
   }
 
@@ -448,6 +462,55 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       spin: opts.spin,
       radius: opts.radius,
     });
+  }
+
+  // ---- additive helpers (M3 AI) -------------------------------------------------
+
+  /** Line of sight to the player, re-evaluated at most every `ms`. */
+  seesPlayerCached(ms = 160): boolean {
+    if (this.now - this.losCheckedAt >= ms) {
+      this.losCheckedAt = this.now + Math.random() * 40; // stagger raycasts across enemies
+      this.losCached = this.seesPlayer();
+    }
+    return this.losCached;
+  }
+
+  /** Stun for `ms` (e.g. a charger slamming into a wall). */
+  stun(ms: number): void {
+    this.stunUntil = Math.max(this.stunUntil, this.now + ms);
+    this.brain.interrupt?.(this);
+  }
+
+  /** Become aggressive immediately (summons, ambush reveals). */
+  forceAggro(): void {
+    if (this.aggro) return;
+    this.aggro = true;
+    this.brain.onAggro?.(this);
+  }
+
+  /** Body overlaps the player (optionally padded). */
+  touchingPlayer(pad = 0): boolean {
+    const a = this.body, b = this.player.body;
+    return !(a.right + pad < b.left || a.left - pad > b.right || a.bottom + pad < b.top || a.top - pad > b.bottom);
+  }
+
+  /** Deal this enemy's damage to the player directly (lunges, dives, charges). */
+  hitPlayer(mult = 1, kb = 180, cause?: string): void {
+    this.world.damagePlayer(this.dmg * mult, { x: this.centerX, y: this.centerY }, cause ?? this.def.name, { kb });
+    if (this.elite === 'vampiric') this.hp = Math.min(this.maxHp, this.hp + this.dmg * mult);
+  }
+
+  /** Can this ground enemy stand at tile (tx, ty)? (feet cell empty, solid/platform below, headroom) */
+  canStandAt(tx: number, ty: number): boolean {
+    const f = this.world.floor;
+    const below = f.tileAt(tx, ty + 1);
+    if (below !== Tile.Solid && below !== Tile.Platform) return false;
+    const hTiles = Math.ceil(this.def.h / TILE);
+    for (let i = 0; i < hTiles; i++) {
+      const t = f.tileAt(tx, ty - i);
+      if (t === Tile.Solid || t === Tile.Spikes) return false;
+    }
+    return true;
   }
 
   override destroy(fromScene?: boolean): void {

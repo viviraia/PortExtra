@@ -2,6 +2,7 @@
  * One floor of the spire. Restarted for every floor; the RunState persists in
  * `session`. Implements the World interface used by every entity.
  */
+import '../entities/bosses/register';
 import Phaser from 'phaser';
 import { bgFarTex, bgMidTex, FX, OBJ, ANIMS, UI } from '../art/keys';
 import { BIOME_PALETTES, RARITY_COLORS } from '../art/palette';
@@ -13,7 +14,7 @@ import { saves } from '../core/save';
 import { BIOMES, ENEMIES, BOSSES, itemDisplayName, kindOfId } from '../data';
 import type { Difficulty, EliteAffix, EnemyDef, FloorLayout, ItemInstance, StatTrack } from '../data/types';
 import { Tile } from '../data/types';
-import { GAME_H, GAME_W, IS_DEBUG, TILE } from '../config';
+import { GAME_H, GAME_W, IS_DEBUG, ROOM_H, TILE } from '../config';
 import { enemyDamageToPlayer } from '../combat/damage';
 import { Juice } from '../combat/juice';
 import { relicHooks, levelMult } from '../combat/PlayerCombat';
@@ -457,7 +458,7 @@ export class GameScene extends Phaser.Scene implements World {
     const st = this.run.stats;
     if (st.lifesteal > 0) this.run.heal(amount * st.lifesteal);
     if (hit.crit) {
-      for (const p of relicHooks(this, 'crit-heal')) this.run.heal(p.amount ?? 2);
+      for (const p of relicHooks(this, 'crit-heal')) this.run.heal(p.heal ?? p.amount ?? 2);
     }
     if (this.boss && _target === this.boss) bus.emit('boss:hp', { hp: Math.max(0, this.boss.hp), max: this.boss.maxHp });
     bus.emit('player:hp', { hp: this.run.hp, max: st.maxHp });
@@ -714,6 +715,7 @@ export class GameScene extends Phaser.Scene implements World {
     this.cameras.main.zoomTo(1.3, 1200, 'Cubic.easeOut');
     this.time.timeScale = 0.6;
     const record = this.run.toRecord(cause);
+    const embersLost = this.run.emberUnbanked;
     this.run.emberUnbanked = 0; // unbanked embers are lost
     saves.save();
     this.time.delayedCall(1300, () => {
@@ -723,7 +725,7 @@ export class GameScene extends Phaser.Scene implements World {
         session.run = null;
         this.scene.stop('HUD');
         if (this.scene.isActive('Touch')) this.scene.stop('Touch');
-        this.scene.start('Death', { record });
+        this.scene.start('Death', { record, embersLost });
       });
     });
   }
@@ -758,6 +760,14 @@ export class GameScene extends Phaser.Scene implements World {
         session.godMode = false;
         this.damagePlayer(1e9, null, 'Debug', { unblockable: true });
       },
+      toBoss: () => {
+        const i = this.layout.rooms.findIndex((r) => r.type === 'boss');
+        if (i < 0) return false;
+        const rb = this.floor.roomBounds(i);
+        this.player.body.reset(rb.x + TILE * 6, rb.y + (ROOM_H - 2) * TILE - 2);
+        return true;
+      },
+      boss: () => (this.boss ? { hp: this.boss.hp, max: this.boss.maxHp, alive: this.boss.alive, engaged: (this.boss as any).engaged, phase2: (this.boss as any).phase2, action: (this.boss.brain as any).current?.name ?? null, x: this.boss.x, y: this.boss.y } : null),
       teleportExit: () => {
         const ex = this.layout.exit;
         this.player.body.reset(ex.tx * TILE + TILE / 2, (ex.ty + 1) * TILE - 2);
