@@ -8,17 +8,20 @@ import { buildFrames, buildImage } from '../sheet';
 const W = 0xffffff;
 
 function arc(p: import('../canvas').Px, cx: number, cy: number, r: number, a0: number, a1: number, th: number, alpha: number) {
-  const steps = Math.max(8, Math.ceil(Math.abs(a1 - a0) * r));
-  for (let s = 0; s <= steps; s++) {
-    const t = s / steps;
+  if (alpha <= 0) return;
+  const steps = Math.max(10, Math.ceil(Math.abs(a1 - a0) * r * 0.5));
+  const outer: [number, number][] = [], inner: [number, number][] = [], edge: [number, number][] = [];
+  for (let s2 = 0; s2 <= steps; s2++) {
+    const t = s2 / steps;
     const a = a0 + (a1 - a0) * t;
-    // taper: thick in the middle-leading edge, thin at the tail
-    const thick = Math.max(1, Math.round(th * Math.sin(t * Math.PI * 0.85 + 0.15)));
-    for (let k = 0; k < thick; k++) {
-      const rr = r - k;
-      p.p(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, W, alpha * (k === 0 ? 1 : 0.75));
-    }
+    // crescent: thin tail -> thick near the leading edge -> sharp tip
+    const thick = th * Math.pow(Math.sin(Math.min(1, t * 1.15) * Math.PI * 0.92 + 0.08), 1.2);
+    outer.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    inner.push([cx + Math.cos(a) * (r - thick), cy + Math.sin(a) * (r - thick)]);
+    edge.push([cx + Math.cos(a) * (r - thick * 0.4), cy + Math.sin(a) * (r - thick * 0.4)]);
   }
+  p.poly([...outer, ...inner.reverse()], W, alpha * 0.55);
+  p.poly([...outer, ...edge.reverse()], W, alpha);
 }
 
 export function buildFx(scene: Phaser.Scene): void {
@@ -28,12 +31,12 @@ export function buildFx(scene: Phaser.Scene): void {
     slash: (p, i, n) => {
       const t = (i + 1) / n;
       const a0 = -70 * D, a1 = a0 + 140 * D * Math.min(1, t * 1.4);
-      arc(p, 18, 24, 18, a0 + Math.max(0, t - 0.5) * 100 * D, a1, 4, 1 - Math.max(0, t - 0.6) * 1.8);
+      arc(p, 16, 24, 20, a0 + Math.max(0, t - 0.5) * 100 * D, a1, 7, 1 - Math.max(0, t - 0.6) * 1.8);
     },
     'slash-wide': (p, i, n) => {
       const t = (i + 1) / n;
       const a0 = -110 * D, a1 = a0 + 220 * D * Math.min(1, t * 1.4);
-      arc(p, 20, 24, 22, a0 + Math.max(0, t - 0.5) * 160 * D, a1, 5, 1 - Math.max(0, t - 0.6) * 1.8);
+      arc(p, 20, 24, 22, a0 + Math.max(0, t - 0.5) * 160 * D, a1, 8, 1 - Math.max(0, t - 0.6) * 1.8);
     },
     stab: (p, i, n) => {
       const t = (i + 1) / n;
@@ -47,7 +50,7 @@ export function buildFx(scene: Phaser.Scene): void {
     },
     smash: (p, i, n) => {
       const t = (i + 1) / n;
-      if (i < 2) arc(p, 16, 30, 20, -100 * D, (-100 + 130 * t * 1.6) * D, 5, 1);
+      if (i < 2) arc(p, 16, 30, 20, -100 * D, (-100 + 130 * t * 1.6) * D, 7, 1);
       else {
         const k = i - 1;
         p.rect(14, 44, 30, 2, W, 1 - k * 0.25);
@@ -60,7 +63,7 @@ export function buildFx(scene: Phaser.Scene): void {
     spin: (p, i, n) => {
       const t = (i + 1) / n;
       const a0 = t * Math.PI * 2;
-      arc(p, 24, 24, 20, a0, a0 + Math.PI * 1.4, 4, 1 - Math.max(0, t - 0.6) * 1.5);
+      arc(p, 24, 24, 21, a0, a0 + Math.PI * 1.4, 6, 1 - Math.max(0, t - 0.6) * 1.5);
     },
   };
   for (const [k, fn] of Object.entries(slashes) as [SlashFx, (p: import('../canvas').Px, i: number, n: number) => void][]) {
@@ -134,11 +137,14 @@ export function buildFx(scene: Phaser.Scene): void {
 
   buildImage(scene, FX.particle, 4, 4, (p) => p.rect(0, 0, 4, 4, W));
   buildImage(scene, FX.spark, 2, 2, (p) => p.rect(0, 0, 2, 2, W));
-  buildImage(scene, FX.glow, 64, 64, (p) => {
-    for (let r = 32; r > 0; r--) {
-      const t = 1 - r / 32;
-      p.circle(32, 32, r, W, 0.02 + t * t * 0.05);
-    }
+  buildImage(scene, FX.glow, 64, 64, (_p, ctx) => {
+    const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.25, 'rgba(255,255,255,0.55)');
+    g.addColorStop(0.6, 'rgba(255,255,255,0.15)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 64, 64);
   });
   buildImage(scene, FX.ring, 64, 64, (p) => {
     p.ring(32, 32, 30, W, 3);

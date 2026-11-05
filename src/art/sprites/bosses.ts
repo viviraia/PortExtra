@@ -189,8 +189,17 @@ const hollowKing = humanBoss(
   88,
   {
     cx: 44, ground: 87, legLen: 18, torsoLen: 24, torsoW: 20, headW: 13, headH: 13, armLen: 17, limb: 5,
-    head: 'crown', body: 'armor', cape: true,
+    head: 'crown', body: 'armor', cape: true, capeLen: 1.05,
     colors: { skin: 0x3a3240, body: 0x2c2632, trim: 0xd8a83a, legs: 0x1e1a22, boots: 0x141016, eye: 0xff6a3a, head: 0x3a3240, cape: 0x7a1226 },
+    torsoDetail: (p, o) => {
+      const x = o.shoulder.x, y = o.shoulder.y;
+      // crimson tabard with gold hem, fur mantle
+      p.poly([[x - 4, y + 2], [x + 5, y + 2], [o.hip.x + 5, o.hip.y + 9], [o.hip.x - 4, o.hip.y + 9]], 0x7a1226);
+      p.rect(o.hip.x - 4, o.hip.y + 8, 10, 1, 0xd8a83a);
+      p.rect(x, y + 4, 1, o.hip.y - y + 3, 0xd8a83a);
+      p.ellipse(x, y, 11, 3, 0x4a3e3a);
+      for (let k = -10; k <= 10; k += 3) p.p(x + k, y + 2, 0x6a5a52);
+    },
   },
   {
     idle: [0, 0, 1, 1].map((b, k) => ({ bob: b, armF: 70, armB: 100, footF: [4, 0], footB: [-4, 0], cape: k % 2 }) as Pose),
@@ -223,11 +232,11 @@ const hollowKing = humanBoss(
     ],
   },
   (p, a, i, out) => {
-    // cracked chest revealing the hollow ember within
-    p.rect(out.shoulder.x - 2, out.shoulder.y + 6, 4, 6, 0x08040a);
-    p.p(out.shoulder.x - 1, out.shoulder.y + 8, 0xff6a3a);
-    p.p(out.shoulder.x, out.shoulder.y + 9, 0xffa060, 0.8);
-    p.rect(out.hip.x - 9, out.hip.y - 2, 18, 2, 0xd8a83a);
+    // pauldrons
+    p.ellipse(out.shoulder.x + 9, out.shoulder.y + 1, 6, 4, 0x3a3240);
+    p.ellipse(out.shoulder.x + 9, out.shoulder.y, 5, 2, 0x5a5262);
+    p.rect(out.shoulder.x + 4, out.shoulder.y + 4, 11, 1, 0xd8a83a);
+
     if (a === 'attack3' && i >= 1 && i <= 3) {
       for (let k = 0; k < 5; k++) {
         const ang = (k / 5) * Math.PI * 2 + i * 0.6;
@@ -315,81 +324,100 @@ const archivist: BossArt = {
 // Gargoyle Matriarch — winged stone horror
 // ---------------------------------------------------------------------------
 
+function batWing(p: Px, rx: number, ry: number, baseDeg: number, len: number, membrane: number, bone: number, dir: number) {
+  const D = Math.PI / 180;
+  const fingers = [-38, -12, 14, 40].map((o) => (baseDeg + o * dir) * D);
+  const tips = fingers.map((a, k) => [rx + Math.cos(a) * len * [1, 0.95, 0.8, 0.6][k], ry + Math.sin(a) * len * [1, 0.95, 0.8, 0.6][k]] as [number, number]);
+  const pts: [number, number][] = [[rx, ry]];
+  for (let k = 0; k < tips.length; k++) {
+    pts.push(tips[k]);
+    if (k + 1 < tips.length) {
+      const mx = (tips[k][0] + tips[k + 1][0]) / 2, my = (tips[k][1] + tips[k + 1][1]) / 2;
+      pts.push([mx + (rx - mx) * 0.28, my + (ry - my) * 0.28]);
+    }
+  }
+  p.poly(pts, membrane);
+  // the leading arm bone (thick) to the first finger, then finger bones
+  const elbowA = fingers[0] + 10 * D * dir;
+  const ex = rx + Math.cos(elbowA) * len * 0.45, ey = ry + Math.sin(elbowA) * len * 0.45;
+  p.line(rx, ry, ex, ey, bone, 3);
+  for (const t of tips) p.line(ex, ey, t[0], t[1], bone, 1);
+  p.p(tips[0][0], tips[0][1], shade(bone, 0.4));
+}
+
 const matriarch: BossArt = {
   fw: 96,
   fh: 80,
   draw(p, a, i) {
     const stone = 0x7a8296, dark = 0x4a5064, deep = 0x30343e, light = 0xa8b0c4, eye = 0xff4a20, moss = 0x5a7a4a;
-    let flap = [0, 2, 4, 2][i % 4];
+    let flap = [0, 10, 20, 10][i % 4];
     let tilt = 0, mouth = 0, hov = [0, -1, -2, -1][i % 4];
-    let cx = 48, cy = 42;
-    if (a === 'move') { flap = [0, 2, 4, 3, 2, 1][i]; hov = [0, -2, -3, -2, 0, 1][i]; }
-    if (a === 'windup') { flap = 5; hov = -2 - i; mouth = i >= 2 ? 1 : 0; }
-    if (a === 'attack1') { flap = [-2, -3, -3, -2, 0][i]; tilt = [2, 5, 7, 5, 2][i]; cy += [0, 6, 12, 10, 4][i]; cx += [0, 4, 8, 6, 2][i]; }
-    if (a === 'attack2') { flap = [5, 2, -3, -2, 1][i]; hov = -1; }
-    if (a === 'attack3') { mouth = [1, 3, 4, 4, 2][i]; flap = [3, 5, 5, 5, 3][i]; tilt = -2; }
-    if (a === 'hurt') { tilt = -3; flap = 1; }
-    if (a === 'death') { flap = Math.max(-3, 2 - i); cy += Math.min(i * 3, 18); tilt = Math.min(i, 5); }
+    let cx = 44, cy = 46;
+    if (a === 'move') { flap = [0, 12, 22, 16, 8, 2][i]; hov = [0, -2, -3, -2, 0, 1][i]; }
+    if (a === 'windup') { flap = 28; hov = -2 - i; mouth = i >= 2 ? 1 : 0; }
+    if (a === 'attack1') { flap = [-15, -25, -30, -25, -5][i]; tilt = [1, 3, 5, 3, 1][i]; cy += [0, 4, 8, 7, 3][i]; cx += [0, 3, 6, 5, 2][i]; }
+    if (a === 'attack2') { flap = [28, 10, -20, -15, 5][i]; hov = -1; }
+    if (a === 'attack3') { mouth = [1, 3, 4, 4, 2][i]; flap = [16, 26, 26, 26, 16][i]; tilt = -2; }
+    if (a === 'hurt') { tilt = -3; flap = 6; }
+    if (a === 'death') { flap = Math.max(-30, 10 - i * 6); cy += Math.min(i * 3, 16); tilt = Math.min(i, 5); }
     cy += hov;
-    const wy = cy - 10 - flap * 3;
-    // back wing
-    p.poly([[cx - 4, cy - 10], [cx - 26, wy - 14], [cx - 44, wy - 4], [cx - 38, wy + 4], [cx - 30, wy + 2], [cx - 24, wy + 10], [cx - 16, wy + 8], [cx - 8, cy]], deep);
-    for (let k = 0; k < 3; k++) p.line(cx - 6, cy - 8, cx - 30 - k * 6, wy - 8 + k * 6, dark, 1);
+    // wings (behind the body)
+    batWing(p, cx + 4, cy - 12, -24 - flap * 0.9, 34, shade(deep, -0.15), dark, 1);
+    batWing(p, cx - 3, cy - 10, -156 + flap * 0.9, 40, deep, dark, -1);
     // tail
-    p.line(cx - 10, cy + 12, cx - 22, cy + 20, dark, 3);
-    p.line(cx - 22, cy + 20, cx - 30, cy + 16 + (i % 2), dark, 2);
-    p.poly([[cx - 32, cy + 13], [cx - 28, cy + 16], [cx - 34, cy + 19]], light);
-    // body
-    p.ellipse(cx + tilt, cy + 4, 13, 14, stone);
-    p.ellipse(cx - 3 + tilt, cy + 6, 9, 11, dark);
-    p.ellipse(cx + 2 + tilt, cy, 9, 9, stone);
-    p.p(cx + 6 + tilt, cy - 4, light);
-    p.p(cx + 7 + tilt, cy - 2, light);
-    // moss patches
-    p.rect(cx - 4, cy + 10, 4, 2, moss);
-    p.rect(cx + 3, cy + 14, 3, 1, moss);
-    // legs & talons
-    const ly = cy + 16;
-    p.line(cx - 4 + tilt, ly - 2, cx - 6 + tilt, ly + 8, dark, 3);
-    p.line(cx + 6 + tilt, ly - 2, cx + 8 + tilt + (a === 'attack1' ? 4 : 0), ly + 8, dark, 3);
-    for (const fx of [cx - 6 + tilt, cx + 8 + tilt + (a === 'attack1' ? 4 : 0)]) {
-      p.line(fx, ly + 8, fx + 3, ly + 10, light);
-      p.line(fx, ly + 8, fx - 2, ly + 10, light);
+    p.line(cx - 6, cy + 10, cx - 18, cy + 18, dark, 3);
+    p.line(cx - 18, cy + 18, cx - 28, cy + 14 + (i % 2), dark, 2);
+    p.poly([[cx - 31, cy + 11], [cx - 26, cy + 14], [cx - 32, cy + 17]], light);
+    // haunches & talons
+    const ly = cy + 14;
+    const talonX = cx + 8 + tilt + (a === 'attack1' ? 6 : 0);
+    p.ellipse(cx - 3 + tilt, ly - 2, 6, 5, dark);
+    p.line(cx - 4 + tilt, ly, cx - 7 + tilt, ly + 9, dark, 3);
+    p.line(cx + 5 + tilt, ly - 1, talonX, ly + 9, stone, 3);
+    for (const fx of [cx - 7 + tilt, talonX]) {
+      p.line(fx, ly + 9, fx + 4, ly + 11, light);
+      p.line(fx, ly + 9, fx - 2, ly + 11, light);
+      p.line(fx, ly + 9, fx + 1, ly + 12, light);
     }
-    // arms
-    p.line(cx + 8 + tilt, cy + 2, cx + 16 + tilt, cy + 10 - (a === 'attack2' ? 6 : 0), stone, 3);
+    // torso
+    p.ellipse(cx + tilt, cy, 10, 14, stone);
+    p.ellipse(cx - 3 + tilt, cy + 2, 6, 11, dark);
+    p.ellipse(cx + 3 + tilt, cy - 4, 6, 6, shade(stone, 0.1));
+    for (let k = 0; k < 4; k++) p.rect(cx + 2 + tilt, cy + 1 + k * 3, 5, 1, shade(stone, -0.2));
+    p.rect(cx - 6 + tilt, cy + 6, 4, 2, moss);
+    p.rect(cx + 1 + tilt, cy - 8, 3, 1, moss);
+    // arm & claw
+    const armY = a === 'attack2' ? cy - 6 : cy + 2;
+    p.line(cx + 6 + tilt, cy - 6, cx + 14 + tilt, armY + 4, stone, 3);
+    p.line(cx + 14 + tilt, armY + 4, cx + 18 + tilt, armY + 2, light, 1);
+    p.line(cx + 14 + tilt, armY + 4, cx + 19 + tilt, armY + 5, light, 1);
     // head
-    const hx = cx + 12 + tilt, hy = cy - 12 + (a === 'attack3' ? -3 : 0);
-    p.rect(hx - 6, hy - 5, 12, 10, stone);
-    p.rect(hx - 6, hy - 5, 12, 2, light);
-    p.rect(hx - 6, hy - 3, 2, 8, dark);
-    // horns
-    p.line(hx - 4, hy - 5, hx - 10, hy - 14, light, 2);
-    p.line(hx + 2, hy - 5, hx + 4, hy - 13, light, 2);
-    // eyes
+    const hx = cx + 12 + tilt, hy = cy - 17 + (a === 'attack3' ? -2 : 0);
+    p.rect(hx - 6, hy - 4, 11, 9, stone);
+    p.rect(hx + 5, hy - 1, 4, 5, stone); // snout
+    p.rect(hx - 6, hy - 4, 11, 1, light);
+    p.rect(hx - 6, hy - 3, 2, 7, dark);
+    p.line(hx - 4, hy - 4, hx - 9, hy - 13, light, 2);
+    p.line(hx - 9, hy - 13, hx - 12, hy - 14, light, 1);
+    p.line(hx + 1, hy - 4, hx + 3, hy - 11, light, 2);
     p.rect(hx + 1, hy - 1, 2, 2, eye);
     p.rect(hx + 4, hy - 1, 2, 2, eye);
-    p.p(hx + 1, hy - 2, eye, 0.5);
+    p.p(hx + 2, hy - 2, eye, 0.6);
+    p.p(hx + 5, hy - 2, eye, 0.6);
     // jaw
-    p.rect(hx - 2, hy + 4, 9, 2 + mouth, dark);
+    p.rect(hx - 1, hy + 4, 10, 2, dark);
     if (mouth) {
-      p.rect(hx, hy + 4, 7, mouth, 0x200810);
-      p.p(hx + 1, hy + 4, 0xffffff);
-      p.p(hx + 4, hy + 4, 0xffffff);
-      p.p(hx + 2, hy + 4 + mouth, 0xffffff);
+      p.rect(hx + 1, hy + 4, 8, mouth + 1, 0x200810);
+      p.p(hx + 2, hy + 4, 0xffffff); p.p(hx + 5, hy + 4, 0xffffff); p.p(hx + 8, hy + 4, 0xffffff);
+      p.rect(hx - 1, hy + 5 + mouth, 10, 2, dark);
+      p.p(hx + 3, hy + 4 + mouth, 0xffffff);
     }
-    // front wing
-    const fwy = cy - 12 - flap * 3;
-    p.poly([[cx + 2, cy - 8], [cx + 14, fwy - 16], [cx + 34, fwy - 10], [cx + 40, fwy - 2], [cx + 30, fwy + 2], [cx + 26, fwy + 8], [cx + 18, fwy + 6], [cx + 8, cy - 2]], stone);
-    for (let k = 0; k < 3; k++) p.line(cx + 6, cy - 6, cx + 26 + k * 5, fwy - 8 + k * 5, dark, 1);
-    p.line(cx + 2, cy - 8, cx + 34, fwy - 10, light, 1);
-    // feather volley visual
     if (a === 'attack2' && i >= 2 && i <= 3) {
-      for (let k = 0; k < 4; k++) p.line(cx + 40 + k * 4, fwy - 6 + k * 4, cx + 46 + k * 4, fwy - 5 + k * 4, light, 1);
+      for (let k = 0; k < 4; k++) p.line(cx + 26 + k * 5, cy - 20 + k * 6, cx + 33 + k * 5, cy - 19 + k * 6, light, 1);
     }
     if (a === 'attack3' && i >= 1 && i <= 3) {
-      // screech rings
-      p.ring(hx + 10, hy + 3, 5 + i * 3, 0xe0e8ff, 1, 0.6);
+      p.ring(hx + 12, hy + 3, 5 + i * 3, 0xe0e8ff, 1, 0.6);
+      p.ring(hx + 12, hy + 3, 2 + i * 3, 0xe0e8ff, 1, 0.3);
     }
   },
 };

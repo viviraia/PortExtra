@@ -29,6 +29,8 @@ export interface BiomePalette {
   ambient: number;
   /** Platform wood/metal. */
   platform: number;
+  /** Suggested tint for OBJ.banner in this biome. */
+  banner: number;
 }
 
 export const BIOME_PALETTES: Record<BiomeId, BiomePalette> = {
@@ -48,6 +50,7 @@ export const BIOME_PALETTES: Record<BiomeId, BiomePalette> = {
     back: 0x161c1a,
     ambient: 0x8fa89a,
     platform: 0x5a4632,
+    banner: 0x7a3030,
   },
   ramparts: {
     sky: 0x0a1026,
@@ -65,6 +68,7 @@ export const BIOME_PALETTES: Record<BiomeId, BiomePalette> = {
     back: 0x1e2338,
     ambient: 0x9aa8d8,
     platform: 0x6a5a48,
+    banner: 0xb83a46,
   },
   library: {
     sky: 0x120a14,
@@ -72,9 +76,9 @@ export const BIOME_PALETTES: Record<BiomeId, BiomePalette> = {
     far: 0x22121e,
     mid: 0x2e1a26,
     fog: 0x5a2f5e,
-    stoneLight: 0x9a6a4a,
-    stoneMid: 0x6a4430,
-    stoneDark: 0x3e2618,
+    stoneLight: 0x8e6448,
+    stoneMid: 0x5e3c2a,
+    stoneDark: 0x382216,
     mortar: 0x1e120c,
     accent: 0xa45cff, // arcana
     accent2: 0xc4a060, // gilded spines
@@ -82,6 +86,7 @@ export const BIOME_PALETTES: Record<BiomeId, BiomePalette> = {
     back: 0x26160f,
     ambient: 0xd8a8c8,
     platform: 0x7a4e2c,
+    banner: 0x8a50d0,
   },
   throne: {
     sky: 0x050307,
@@ -89,9 +94,9 @@ export const BIOME_PALETTES: Record<BiomeId, BiomePalette> = {
     far: 0x150912,
     mid: 0x1e0c16,
     fog: 0x5a1626,
-    stoneLight: 0x4a4250,
-    stoneMid: 0x2c2632,
-    stoneDark: 0x18141c,
+    stoneLight: 0x6e6478,
+    stoneMid: 0x463e50,
+    stoneDark: 0x241e2a,
     mortar: 0x0a080c,
     accent: 0xd8a83a, // gold
     accent2: 0xa01830, // crimson
@@ -99,6 +104,7 @@ export const BIOME_PALETTES: Record<BiomeId, BiomePalette> = {
     back: 0x130f16,
     ambient: 0xc89098,
     platform: 0x2a2228,
+    banner: 0xc02038,
   },
 };
 

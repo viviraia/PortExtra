@@ -3,12 +3,13 @@
  *  0 player, 1 enemies (&o=offset), 2 bosses (&b=index), 3..6 biome mock scenes, 7 objects/fx/icons/ui
  */
 import Phaser from 'phaser';
-import { buildAllTextures } from './TextureFactory';
-import { ANIMS, bgFarTex, bgMidTex, bossTex, enemyAnim, enemyTex, FX, iconTex, OBJ, PLAYER_ANIMS, projTex, slashTex, TILE_FRAMES, tilesTex, UI, type ProjectileKey } from './keys';
+import { buildAllTextures, rebuildPlayerTexture } from './TextureFactory';
+import { ANIMS, BOSS_ANIM_SUFFIXES, bossAnim, ENEMY_ANIM_SUFFIXES, bgFarTex, bgMidTex, bossTex, enemyAnim, enemyTex, FX, iconTex, OBJ, PLAYER_ANIMS, projTex, slashTex, TILE_FRAMES, tilesTex, UI, type ProjectileKey } from './keys';
 import { ENEMY_ART } from './sprites/enemies';
 import { BOSS_ART } from './sprites/bosses';
 import { ICON_IDS } from './sprites/icons';
 import { BIOME_ORDER, type BiomeId } from '../data/types';
+import { ALL_ITEM_IDS, BOSS_IDS, ENEMY_IDS } from '../data/ids';
 import { BIOME_PALETTES, RARITY_COLORS } from './palette';
 
 const q = new URLSearchParams(location.search);
@@ -40,12 +41,36 @@ class Preview extends Phaser.Scene {
     const t0 = performance.now();
     buildAllTextures(this);
     (window as any).__buildMs = performance.now() - t0;
-    if (page === 0) this.sheet('player', 32, 32);
+    if (page === 0) {
+      const sp = this.add.sprite(460, 250, 'player').play(PLAYER_ANIMS.run);
+      if (q.has('alt')) rebuildPlayerTexture(this, { cloak: 0x8a1a2a, trim: 0xe8e8f0, skin: 0x8a6a50, eyes: 0x60d0ff });
+      this.sheet('player', 32, 32);
+      void sp;
+    }
     else if (page === 1) this.enemies(Number(q.get('o') ?? '0'));
     else if (page === 2) { const id = Object.keys(BOSS_ART)[Number(q.get('b') ?? '0')]; this.sheet(bossTex(id), BOSS_ART[id].fw, BOSS_ART[id].fh); }
     else if (page >= 3 && page <= 6) this.biome(BIOME_ORDER[page - 3]);
-    else this.misc();
+    else if (page === 7) this.misc();
+    else this.misc2();
+    (window as any).__missing = this.verify();
     (window as any).__ready = true;
+  }
+  verify(): string[] {
+    const miss: string[] = [];
+    const tex = (k: string) => { if (!this.textures.exists(k)) miss.push('tex:' + k); };
+    const anim = (k: string) => { if (!this.anims.exists(k)) miss.push('anim:' + k); };
+    tex('player'); Object.values(PLAYER_ANIMS).forEach(anim);
+    for (const id of Object.keys(ENEMY_IDS)) { tex(enemyTex(id)); ENEMY_ANIM_SUFFIXES.forEach((a) => anim(enemyAnim(id, a))); }
+    for (const id of Object.keys(BOSS_IDS)) { tex(bossTex(id)); BOSS_ANIM_SUFFIXES.forEach((a) => anim(bossAnim(id, a))); }
+    for (const b of BIOME_ORDER) { tex(tilesTex(b)); tex(bgFarTex(b)); tex(bgMidTex(b)); if (this.textures.get(tilesTex(b)).frameTotal - 1 < 32) miss.push('frames:' + b); }
+    ALL_ITEM_IDS.forEach((id) => tex(iconTex(id)));
+    Object.values(OBJ).forEach(tex); Object.values(ANIMS).forEach(anim); Object.values(FX).forEach(tex);
+    for (const k of ['slash', 'slash-wide', 'stab', 'smash', 'spin'] as const) { tex(slashTex(k)); anim(slashTex(k)); }
+    for (const p of ['arrow', 'bolt', 'knife', 'fireball', 'spark', 'orb', 'bomb', 'feather', 'bone', 'grenade', 'icicle', 'ink', 'darkorb'] as ProjectileKey[]) tex(projTex(p));
+    for (const k of [UI.stickBase, UI.stickKnob, UI.button, UI.slot, UI.title, UI.cursor]) tex(k);
+    for (const g of ['jump', 'attack1', 'attack2', 'dodge', 'skill1', 'skill2', 'potion', 'interact', 'pause'] as const) tex(UI.btnGlyph(g));
+    for (const f of [UI.font, UI.fontBig]) if (!this.cache.bitmapFont.exists(f)) miss.push('font:' + f);
+    return miss;
   }
   frames(key: string) {
     return this.textures.get(key).getFrameNames().filter((f) => f !== '__BASE').sort((a, b) => Number(a) - Number(b));
@@ -126,14 +151,24 @@ class Preview extends Phaser.Scene {
     x = 2; y += 50;
     for (const [k, n] of [[FX.hitSpark, 4], [FX.explosion, 7], [FX.dust, 5], [FX.smoke, 6], [FX.deathBurst, 6], [FX.lightning, 4]] as const) for (let f = 0; f < n; f++) place(k, f);
     for (const k of [FX.particle, FX.spark, FX.glow, FX.ring, FX.shadow]) place(k);
-    x = 2; y += 66;
+  }
+  misc2() {
+    let x = 2, y = 2;
+    const place = (key: string) => {
+      const fr = this.textures.get(key).get();
+      if (x + fr.width > 478) { x = 2; y += 20; }
+      this.add.image(x, y, key).setOrigin(0);
+      x += fr.width + 3;
+    };
     for (const p of ['arrow', 'bolt', 'knife', 'fireball', 'spark', 'orb', 'bomb', 'feather', 'bone', 'grenade', 'icicle', 'ink', 'darkorb'] as ProjectileKey[]) place(projTex(p));
     for (const id of ICON_IDS) place(iconTex(id));
     x = 2; y += 18;
     for (const k of [UI.stickBase, UI.stickKnob, UI.button, UI.slot, UI.cursor]) place(k);
     for (const g of ['jump', 'attack1', 'attack2', 'dodge', 'skill1', 'skill2', 'potion', 'interact', 'pause'] as const) place(UI.btnGlyph(g));
+    x = 2; y += 70;
     place(UI.title);
-    this.add.bitmapText(300, 250, UI.font, 'Rare item').setTint(RARITY_COLORS.rare);
+    this.add.bitmapText(300, 200, UI.font, 'Rare item').setTint(RARITY_COLORS.rare);
+    this.add.bitmapText(300, 212, UI.font, `built in ${Math.round((window as any).__buildMs)} ms`);
   }
 }
 

@@ -140,14 +140,18 @@ export function buildObjects(scene: Phaser.Scene): void {
 
   // banner (light neutral cloth so it can be tinted per biome)
   buildImage(scene, OBJ.banner, 16, 32, (p) => {
-    p.rect(1, 0, 14, 2, 0x8a8478);
-    p.rect(2, 2, 12, 24, 0xe8e0d8);
-    p.rect(2, 2, 2, 24, 0xc0b8b0);
-    p.poly([[2, 26], [14, 26], [14, 31], [8, 27], [2, 31]], 0xe8e0d8);
-    p.rect(6, 8, 4, 6, 0x9a9088);
-    p.rect(5, 9, 6, 1, 0x9a9088);
-    p.rect(7, 15, 2, 5, 0x9a9088);
-    p.rect(2, 3, 12, 1, 0xa8a098);
+    // pole
+    p.rect(0, 1, 16, 2, 0x8a8478);
+    p.p(0, 0, 0xc8c0b0); p.p(15, 0, 0xc8c0b0);
+    // cloth (light neutral; tint per biome)
+    p.poly([[2, 3], [14, 3], [14, 30], [8, 25], [2, 30]], 0xf0ece6);
+    p.poly([[2, 3], [5, 3], [5, 27], [2, 30]], 0xc8c0b8);
+    p.rect(11, 3, 1, 23, 0xdcd6ce);
+    // sigil: a small spire
+    p.poly([[6, 18], [10, 18], [8, 8]], 0x8a8278);
+    p.rect(7, 18, 2, 3, 0x8a8278);
+    p.rect(2, 5, 12, 1, 0xb0a8a0);
+    p.rect(2, 22, 12, 1, 0xb0a8a0);
   }, OUTLINE);
 
   buildImage(scene, OBJ.potion, 8, 8, (p) => {

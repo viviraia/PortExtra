@@ -51,7 +51,7 @@ const WEAPONS: Record<keyof typeof WEAPON_IDS, Icon> = {
   ember_staff: (p) => { shaft(p, 3, 15, 11, 5, 0x5a3a2a); p.circle(12, 4, 3, 0xd84a1a); p.circle(12, 4, 2, 0xff9a3a); p.p(11, 3, 0xfff0a0); p.ring(12, 4, 3, GOLD_D, 1); },
   storm_rod: (p) => { shaft(p, 3, 15, 10, 6, 0x4a4a5a); p.rect(9, 4, 3, 3, STEEL_D); p.line(12, 4, 14, 1, 0x9ad8ff); p.line(12, 5, 15, 6, 0x9ad8ff); p.p(11, 5, 0xffffff); p.p(14, 1, 0xffffff); },
   oak_buckler: (p) => { p.circle(8, 8, 6.5, WOOD); p.ring(8, 8, 6.5, STEEL_D, 1); p.circle(8, 8, 2, STEEL); p.p(7, 7, 0xffffff); p.line(3, 6, 13, 6, WOOD_D); p.line(3, 10, 13, 10, WOOD_D); },
-  bastion_shield: (p) => { p.poly([[2, 1], [14, 1], [14, 9], [8, 15], [2, 9]], STEEL_D); p.poly([[3, 2], [13, 2], [13, 9], [8, 14], [3, 9]], STEEL); p.rect(7, 3, 2, 9, 0x9a2a3a); p.rect(4, 6, 8, 2, 0x9a2a3a); },
+  bastion_shield: (p) => { p.poly([[2, 1], [14, 1], [14, 9], [8, 15], [2, 9]], STEEL_D); p.poly([[3, 2], [13, 2], [13, 9], [8, 14], [3, 9]], STEEL); p.poly([[5, 11], [11, 11], [8, 3]], GOLD_D); p.poly([[6, 10], [10, 10], [8, 5]], GOLD); p.rect(4, 12, 8, 1, GOLD_D); },
 };
 
 const SKILLS: Record<keyof typeof SKILL_IDS, Icon> = {

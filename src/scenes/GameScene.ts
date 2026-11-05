@@ -157,6 +157,8 @@ export class GameScene extends Phaser.Scene implements World {
     const b = BIOMES[biome];
     bus.emit('run:floor', { floor: floorN, biome, biomeName: b?.name ?? biome, tagline: b?.tagline ?? '', isBoss: this.layout.isBoss });
     this.emitAll();
+    // Overlay scenes are created on the next tick; resend state once they exist.
+    this.time.delayedCall(30, () => this.emitAll());
     audio.music(this.layout.isBoss ? 'boss' : biome);
 
     if (IS_DEBUG) this.installDebug();
@@ -215,7 +217,7 @@ export class GameScene extends Phaser.Scene implements World {
           this.addTorch(wx, wy - 4);
           break;
         case 'banner':
-          if (this.textures.exists(OBJ.banner)) this.add.image(wx, wy - TILE * 2, OBJ.banner).setOrigin(0.5, 0).setDepth(-1).setTint(BIOME_PALETTES[L.biome].accent ?? 0xffffff);
+          if (this.textures.exists(OBJ.banner)) this.add.image(wx, wy - TILE * 2, OBJ.banner).setOrigin(0.5, 0).setDepth(-1).setTint((BIOME_PALETTES[L.biome] as any).banner ?? 0xffffff);
           break;
         case 'boss': {
           const bossId = BIOMES[L.biome]?.bossId ?? Object.keys(BOSSES)[0];
@@ -735,7 +737,7 @@ export class GameScene extends Phaser.Scene implements World {
     this.interactables = [];
     this.enemies = [];
     setCursorVisible(this.game, true);
-    if (this.physics.world.isPaused) this.physics.resume();
+    if (this.physics?.world?.isPaused) this.physics.resume();
   }
 
   private installDebug(): void {

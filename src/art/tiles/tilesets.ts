@@ -44,8 +44,8 @@ function bricks(p: Px, pal: BiomePalette, bw: number, bh: number, seed: number, 
   for (let j = 0; j < T; j++)
     for (let i = 0; i < T; i++) {
       const n = noise2(i, j, seed + 7);
-      if (n < 0.05) p.p(i, j, dk);
-      else if (n > 0.97) p.p(i, j, lit);
+      if (n < 0.04) p.p(i, j, dk);
+      else if (n > 0.985) p.p(i, j, mix(base, lit, 0.6));
     }
 }
 
@@ -223,9 +223,6 @@ function drawSolid(p: Px, pal: BiomePalette, style: BiomeTileStyle, mask: number
   if (!W) { p.rect(0, 0, 1, T, pal.stoneLight); p.rect(1, 0, 1, T, mix(pal.stoneMid, pal.stoneLight, 0.4)); }
   if (!S) style.under(p, pal, seed);
   if (!N) style.cap(p, pal, seed);
-  // rounded outer corners
-  if (!N && !W) p.p(0, 0, 0, 0);
-  if (!N && !E) p.p(T - 1, 0, 0, 0);
 }
 
 function clearPx(ctx: CanvasRenderingContext2D, x: number, y: number) {
@@ -287,11 +284,13 @@ export function drawTileFrame(p: Px, biome: BiomeId, frame: number): void {
   if (frame < 28) {
     const k = frame - 23;
     bricks(p, bp, style.brick[0], style.brick[1], 200 + k, bp.stoneMid, bp.stoneLight, bp.stoneDark, bp.mortar);
-    if (k === 3) p.line(2, 3, 9, 12, bp.mortar);
+    if (k === 3) p.line(2, 3, 6, 9, bp.mortar);
     if (k === 4) { p.rect(0, 0, T, T, shade(pal.back, -0.15)); for (let i = 0; i < 6; i++) p.p((i * 7) % 16, (i * 5) % 16, bp.stoneLight); }
-    return;
+  } else {
+    const k = frame - 28;
+    bricks(p, bp, style.brick[0], style.brick[1], 300 + k, bp.stoneMid, bp.stoneLight, bp.stoneDark, bp.mortar);
+    style.backDecor(p, bp, k);
   }
-  const k = frame - 28;
-  bricks(p, bp, style.brick[0], style.brick[1], 300 + k, bp.stoneMid, bp.stoneLight, bp.stoneDark, bp.mortar);
-  style.backDecor(p, bp, k);
+  // keep the back layer subdued so the foreground reads clearly
+  p.rect(0, 0, T, T, 0x000000, 0.3);
 }

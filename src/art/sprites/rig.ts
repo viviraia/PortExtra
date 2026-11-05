@@ -34,6 +34,10 @@ export interface HumSpec {
   cape?: boolean;
   /** Forward shift of the head relative to shoulders. */
   hunch?: number;
+  /** Cape length as a fraction of leg length below the hip (default 0.6). */
+  capeLen?: number;
+  /** Extra drawing on top of the torso, below the head and front arm. */
+  torsoDetail?: (p: Px, out: RigOut) => void;
   colors: HumColors;
 }
 
@@ -121,7 +125,7 @@ export function drawHumanoid(p: Px, s: HumSpec, pose: Pose = {}, holdF?: HoldFn,
   if (s.cape) {
     const fl = pose.cape ?? 0;
     const capeC = c.cape ?? shade(c.body, -0.25);
-    const bottom = Math.min(s.ground - 1, hipY + Math.ceil(legLen * 0.6));
+    const bottom = Math.min(s.ground - 1, hipY + Math.ceil(legLen * (s.capeLen ?? 0.6)));
     p.poly(
       [
         [shB.x - 1, shY],
@@ -196,6 +200,8 @@ export function drawHumanoid(p: Px, s: HumSpec, pose: Pose = {}, holdF?: HoldFn,
       p.p(shX + 1, hipY - 2, shade(c.trim, 0.4));
     }
   }
+
+  s.torsoDetail?.(p, out);
 
   // --- front leg
   const footFx = hipX + 1 + fF[0], footFy = s.ground - fF[1];

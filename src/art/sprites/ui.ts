@@ -54,19 +54,19 @@ export function buildUi(scene: Phaser.Scene): void {
   });
 
   // title logo
-  buildImage(scene, UI.title, 256, 64, (p, ctx) => {
+  buildImage(scene, UI.title, 240, 48, (p, ctx) => {
     const s1 = 'HOLLOW', s2 = 'SPIRE';
-    const scale = 4;
+    const scale = 3;
     const grad = (row: number) => css([0xfff0c0, 0xffe0a0, 0xffc870, 0xffa848, 0xf08030, 0xd05a20, 0xa03818][Math.min(6, row)]);
     const w1 = measureGlyphText(s1, scale), w2 = measureGlyphText(s2, scale);
     const gap = 14;
     const total = w1 + gap + w2;
-    const x1 = Math.floor((256 - total) / 2), y = 22;
+    const x1 = Math.floor((240 - total) / 2), y = 20;
     // spire silhouette behind the gap
     const sx = x1 + w1 + Math.floor(gap / 2);
-    p.poly([[sx - 5, y + 28], [sx + 5, y + 28], [sx + 2, y - 2], [sx, y - 18], [sx - 2, y - 2]], 0x2a1420);
-    p.rect(sx - 1, y + 4, 2, 4, 0xff9a3c);
-    p.p(sx, y - 18, 0xffd080);
+    p.poly([[sx - 4, y + 22], [sx + 4, y + 22], [sx + 2, y - 1], [sx, y - 16], [sx - 2, y - 1]], 0x2a1420);
+    p.rect(sx - 1, y + 4, 2, 3, 0xff9a3c);
+    p.p(sx, y - 16, 0xffd080);
     // drop shadow
     drawGlyphText(ctx, s1, x1 + 2, y + 3, scale, css(0x200810));
     drawGlyphText(ctx, s2, x1 + w1 + gap + 2, y + 3, scale, css(0x200810));
@@ -74,9 +74,9 @@ export function buildUi(scene: Phaser.Scene): void {
     drawGlyphText(ctx, s2, x1 + w1 + gap, y, scale, grad);
     // embers
     for (let k = 0; k < 14; k++) {
-      const ex = x1 + ((k * 37) % total), ey = y - 4 - ((k * 13) % 14);
+      const ex = x1 + ((k * 37) % total), ey = y - 3 - ((k * 13) % 12);
       p.p(ex, ey, k % 2 ? 0xff9a3c : 0xffd080, 0.4 + (k % 3) * 0.2);
     }
-    outlineRegion(ctx, 0, 0, 256, 64, 0x0a0408);
+    outlineRegion(ctx, 0, 0, 240, 48, 0x0a0408);
   });
 }

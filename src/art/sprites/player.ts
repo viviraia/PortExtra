@@ -62,8 +62,7 @@ function ember(p: Px, x: number, y: number, i: number, eye: number) {
   p.p(x + 1, y, eye);
   p.p(x, y - 1, eye);
   p.p(x - (f === 1 ? 0 : 1), y - 2, shade(eye, 0.4), 0.9);
-  p.p(x - (f === 2 ? 2 : 1), y - 3, shade(eye, 0.7), 0.7);
-  if (f === 0) p.p(x - 2, y - 4, 0xffffff, 0.5);
+  if (f !== 1) p.p(x - (f === 2 ? 2 : 1), y - 3, shade(eye, 0.7), 0.6);
 }
 
 function sword(p: Px, hand: { x: number; y: number }, ang: number, trim: number) {
