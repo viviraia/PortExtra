@@ -59,8 +59,9 @@ class ArchivistBrain extends BossBrain {
     if (this.points.length) return;
     const room = b.world.floor.roomBounds(b.roomIndex);
     const pt = (tx: number, ty: number) => ({ x: room.x + tx * TILE + TILE / 2, y: room.y + ty * TILE });
-    // Feet positions (sprite origin is bottom-center) hovering in open air.
-    this.points = [pt(10, 14), pt(29, 14), pt(15, 19), pt(24, 19), pt(19, 12)];
+    // Feet positions (sprite origin is bottom-center) hovering in open air,
+    // all within jump reach of the floor or the side platforms so melee builds can hit it.
+    this.points = [pt(11, 16), pt(28, 16), pt(15, 19), pt(24, 19), pt(19, 19)];
     this.home = 4;
   }
 
@@ -133,7 +134,7 @@ class ArchivistBrain extends BossBrain {
           audio.sfx('magic', { volume: 0.5 });
           // Launch upward in a fan, then the orbs curve toward the player.
           const a = -Math.PI / 2 + (i - (n - 1) / 2) * 0.45 + (b.facing > 0 ? 0.25 : -0.25);
-          b.shoot('ink', b.phase2 ? 125 : 110, { dirX: Math.cos(a), dirY: Math.sin(a), homing: b.phase2 ? 1.9 : 1.5, lifeMs: 3400, mult: 0.7, glow: 0xb070ff, offsetY: -10 });
+          b.shoot('ink', b.phase2 ? 125 : 110, { dirX: Math.cos(a), dirY: Math.sin(a), homing: b.phase2 ? 1.9 : 1.5, lifeMs: 3400, mult: 0.55, glow: 0xb070ff, offsetY: -10 });
         },
       });
     }
@@ -156,7 +157,7 @@ class ArchivistBrain extends BossBrain {
             const xs = b.phase2 ? [p.centerX, p.centerX - 56, p.centerX + 56] : [p.centerX];
             for (const x of xs) {
               const cx = Phaser.Math.Clamp(x, b.arena.left + 18, b.arena.right - 18);
-              b.addHazard(new Eruption(b.world, cx, b.groundBelow(cx, p.body.bottom - 4), delay, b.dmg * 0.9, 'Summoning circle'));
+              b.addHazard(new Eruption(b.world, cx, b.groundBelow(cx, p.body.bottom - 4), delay, b.dmg * 0.8, 'Summoning circle'));
             }
           },
         },
@@ -166,7 +167,7 @@ class ArchivistBrain extends BossBrain {
           fn: () => {
             const p = b.world.player;
             const cx = Phaser.Math.Clamp(p.centerX, b.arena.left + 18, b.arena.right - 18);
-            b.addHazard(new Eruption(b.world, cx, b.groundBelow(cx, p.body.bottom - 4), delay, b.dmg * 0.9, 'Summoning circle'));
+            b.addHazard(new Eruption(b.world, cx, b.groundBelow(cx, p.body.bottom - 4), delay, b.dmg * 0.8, 'Summoning circle'));
           },
         },
       ],
