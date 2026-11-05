@@ -10,7 +10,7 @@ import { bus } from '../core/events';
 import { input, setCursorVisible } from '../core/input/InputManager';
 import { floorSeed, Rng } from '../core/rng';
 import { saves } from '../core/save';
-import { BIOMES, ENEMIES, BOSSES, itemDisplayName } from '../data';
+import { BIOMES, ENEMIES, BOSSES, itemDisplayName, kindOfId } from '../data';
 import type { Difficulty, EliteAffix, EnemyDef, FloorLayout, ItemInstance, StatTrack } from '../data/types';
 import { Tile } from '../data/types';
 import { GAME_H, GAME_W, IS_DEBUG, TILE } from '../config';
@@ -24,7 +24,7 @@ import { PickupSystem } from '../entities/Pickup';
 import { Player } from '../entities/Player';
 import { ProjectileSystem } from '../entities/Projectile';
 import type { PlayerHit, World } from '../entities/World';
-import { rollEnemyCoins } from '../run/Loot';
+import { makeItem, rollEnemyCoins } from '../run/Loot';
 import { RunState } from '../run/RunState';
 import { session } from '../run/session';
 import { buildFloor, type BuiltFloor } from '../world/FloorBuilder';
@@ -86,6 +86,8 @@ export class GameScene extends Phaser.Scene implements World {
   create(): void {
     if (!session.run) {
       session.run = RunState.create(Date.now() >>> 0, saves.data);
+      const f = IS_DEBUG ? Number(new URLSearchParams(location.search).get('floor')) : 0;
+      if (f > 1) session.run.enterFloor(f);
     }
     this.run = session.run!;
     this.enemies = [];
@@ -760,6 +762,24 @@ export class GameScene extends Phaser.Scene implements World {
         const ex = this.layout.exit;
         this.player.body.reset(ex.tx * TILE + TILE / 2, (ex.ty + 1) * TILE - 2);
       },
+      spawn: (id: string, elite = false, dx = 60) => this.spawnEnemy(id, this.player.x + dx * this.player.facing, this.player.y - 4, { elite }),
+      give: (id: string, rarity: 'common' | 'rare' | 'epic' | 'legendary' = 'rare') => {
+        const kind = kindOfId(id);
+        if (!kind) return false;
+        this.dropItem(makeItem(kind, id, this.difficulty.itemLevel, rarity), this.player.x + 20 * this.player.facing, this.player.y - 4);
+        return true;
+      },
+      equip: (id: string, slot = 0, rarity: 'common' | 'rare' | 'epic' | 'legendary' = 'rare') => {
+        const kind = kindOfId(id);
+        if (!kind) return false;
+        const item = makeItem(kind, id, this.difficulty.itemLevel, rarity);
+        if (kind === 'relic') this.run.addRelic(item);
+        else (kind === 'weapon' ? this.run.weapons : this.run.skills)[slot] = item;
+        this.afterEquip(item);
+        return true;
+      },
+      scroll: (t: StatTrack) => this.grantScroll(t),
+      heal: () => this.run.heal(1e9),
       state: () => ({
         floor: this.run.floor,
         hp: this.run.hp,
