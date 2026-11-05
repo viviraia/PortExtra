@@ -33,3 +33,17 @@ export const SAVE_VERSION = 1;
 
 export const IS_DEBUG =
   typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug');
+
+/**
+ * Render depths relative to the lighting darkness overlay. Anything that must
+ * stay readable in unlit areas (enemy telegraphs, enemy projectiles, ambient
+ * motes) is drawn above DEPTH.darkness.
+ */
+export const DEPTH = {
+  darkness: 800,
+  lightGlow: 801,
+  aboveDark: 802,
+  aboveDarkProjectile: 803,
+  telegraph: 805,
+  telegraphTop: 806,
+} as const;
