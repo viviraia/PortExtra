@@ -12,6 +12,7 @@ import { RELICS, SKILLS, WEAPONS, AFFIXES } from '../data';
 import type { ItemInstance, MeleeStep, OnHitStatus, RelicHook, SkillDef, WeaponDef } from '../data/types';
 import { computeHit } from './damage';
 import { castSkill } from './skills';
+import { SkillEntitySystem } from './skillEntities';
 import type { Enemy } from '../entities/Enemy';
 import type { Player } from '../entities/Player';
 import type { PlayerHit, World } from '../entities/World';
@@ -34,9 +35,23 @@ export class PlayerCombat {
   /** While true, variable-jump cutting is disabled (e.g. launched by an attack). */
   airborneLocked = false;
   blocking = false;
+  /** Phantom dash in progress (blocks weapons). */
+  dashing = false;
+  /** Temporary damage buff (War Cry): fraction added while now < buffUntil. */
+  buffDamagePct = 0;
+  buffUntil = 0;
+  /** Persistent skill entities + status visuals. */
+  readonly effects: SkillEntitySystem;
   private equippedKey = '';
 
-  constructor(readonly world: World, readonly player: Player) {}
+  constructor(readonly world: World, readonly player: Player) {
+    this.effects = new SkillEntitySystem(world);
+  }
+
+  /** Current temporary damage multiplier from buffs. */
+  get buffMult(): number {
+    return this.world.now < this.buffUntil ? 1 + this.buffDamagePct : 1;
+  }
 
   /** Rebuild controllers if the run's equipment changed. */
   sync(): void {
@@ -59,7 +74,7 @@ export class PlayerCombat {
   update(dt: number): void {
     this.sync();
     const p = this.player;
-    const canAct = p.state2 === 'normal' && !p.stunned;
+    const canAct = p.state2 === 'normal' && !p.stunned && !this.dashing;
     this.lockFacing = false;
     this.blocking = false;
     p.moveScale = 1;
@@ -73,6 +88,7 @@ export class PlayerCombat {
       if (!s) return;
       s.update(dt, canAct && input.pressed(skillActions[i]));
     });
+    this.effects.update(dt);
   }
 
   cancel(): void {
@@ -167,7 +183,7 @@ export class PlayerCombat {
     const statuses = this.statusesFor(opts.item, opts.onHit);
     const rolled = statuses.find((s) => this.world.rng.chance(s.chance));
     return {
-      amount: res.amount,
+      amount: Math.max(1, Math.round(res.amount * this.buffMult)),
       crit: res.crit,
       kbX: Math.sign(opts.dirX || 1) * opts.kb,
       kbY: opts.kbY ?? -40,
@@ -195,6 +211,7 @@ export class WeaponController {
   private chargeStart = -1;
   private blockStart = -1;
   private stepDir: 1 | -1 = 1;
+  private slashFx: Phaser.GameObjects.Sprite | null = null;
 
   constructor(private c: PlayerCombat, readonly item: ItemInstance, readonly slot: number) {
     this.def = WEAPONS[item.defId];
@@ -273,6 +290,7 @@ export class WeaponController {
       }
     }
     if (this.phase === 'active') this.doHits(st, combo);
+    if (this.phase !== 'idle' && st) this.followFx(st);
   }
 
   private begin(combo: MeleeStep[]): void {
@@ -293,17 +311,32 @@ export class WeaponController {
     const p = this.c.player;
     if (st.lunge) p.body.velocity.x = this.stepDir * st.lunge;
     audio.sfx(st.fx === 'smash' ? 'swingHeavy' : st.fx === 'stab' ? 'stab' : 'swing', { volume: 0.7 });
-    const fxKey = slashTex(st.fx);
-    const reach = st.reach;
-    const ox = st.fx === 'spin' ? 0 : this.stepDir * reach * 0.5;
-    const s = this.world.juice.fx(p.centerX + ox, p.centerY + (st.offsetY ?? 0), fxKey, {
+    // Slash sheets are 48x48 with the swing pivot near (20, 24): anchor that pivot on the hand.
+    const spin = st.fx === 'spin';
+    const scale = spin ? Math.max(0.8, Math.min(1.8, st.reach / 22)) : Math.max(0.7, Math.min(1.8, st.reach / 28));
+    const s = this.world.juice.fx(p.centerX + this.stepDir * 2, p.centerY + (st.offsetY ?? 0), slashTex(st.fx), {
       flipX: this.stepDir < 0,
       depth: 520,
       tint: weaponTint(this.def),
       add: true,
-      scale: Math.max(0.6, Math.min(1.6, (reach + 8) / 40)),
     });
-    if (s) s.setAlpha(0.9);
+    if (s) {
+      s.setOrigin(spin ? 0.5 : 20 / 48, 0.5);
+      s.setScale(scale, spin ? scale : Math.max(0.8, Math.min(1.6, st.height / 26)) * (st.fx === 'stab' ? 0.8 : 1));
+      s.setAlpha(0.9);
+      this.slashFx = s;
+    }
+  }
+
+  /** Keep the slash effect glued to the player while it plays (lunges move the player). */
+  private followFx(st: MeleeStep): void {
+    const s = this.slashFx;
+    if (!s || !s.active) {
+      this.slashFx = null;
+      return;
+    }
+    const p = this.c.player;
+    s.setPosition(p.centerX + this.stepDir * 2, p.centerY + (st.offsetY ?? 0));
   }
 
   private doHits(st: MeleeStep, combo: MeleeStep[]): void {
@@ -410,6 +443,8 @@ export class WeaponController {
             special: this.def.special,
           }),
         explodeRadius: spec.projectile === 'fireball' ? 22 : 0,
+        glow: spec.projectile === 'fireball' ? 0xff7a2a : spec.projectile === 'spark' ? 0x9ad8ff : undefined,
+        rotate: spec.projectile !== 'fireball',
       });
     }
   }

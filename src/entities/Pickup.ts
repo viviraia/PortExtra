@@ -66,7 +66,7 @@ export class PickupSystem {
   update(dt: number): void {
     const p = this.world.player;
     if (p.state2 === 'dead') return;
-    const magnet = MAGNET_RADIUS * (relicHooks(this.world, 'coin-magnet').length ? 4 : 1);
+    const magnet = relicHooks(this.world, 'coin-magnet').reduce((m, h) => Math.max(m, h.radius ?? 140), MAGNET_RADIUS);
     const now = this.world.now;
     for (const it of this.items) {
       if (it.dead) continue;
@@ -80,7 +80,7 @@ export class PickupSystem {
       if (now < it.readyAt) continue;
       const dx = p.centerX - s.x, dy = p.centerY - s.y;
       const d = Math.hypot(dx, dy);
-      const r = it.kind === 'scroll' ? 14 : magnet;
+      const r = it.kind === 'scroll' ? 14 : it.kind === 'heart' ? Math.min(magnet, 48) : magnet;
       if (d < r) {
         const body = s.body as Phaser.Physics.Arcade.Body;
         body.setAllowGravity(false);

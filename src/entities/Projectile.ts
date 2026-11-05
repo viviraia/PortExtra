@@ -56,7 +56,9 @@ interface Live {
   glow: Phaser.GameObjects.Image | null;
   vx: number;
   vy: number;
-  dieAt: number;
+  /** Simulated age in ms (advanced by the same dt as movement, so range is frame-rate independent). */
+  age: number;
+  lifeMs: number;
   pierceLeft: number;
   hit: Set<Enemy>;
   dead: boolean;
@@ -93,7 +95,8 @@ export class ProjectileSystem {
       glow,
       vx: spec.vx,
       vy: spec.vy,
-      dieAt: this.world.now + (spec.lifeMs ?? 1500),
+      age: 0,
+      lifeMs: spec.lifeMs ?? 1500,
       pierceLeft: spec.pierce ?? 0,
       hit: new Set(),
       dead: false,
@@ -101,10 +104,10 @@ export class ProjectileSystem {
   }
 
   update(dt: number): void {
-    const now = this.world.now;
     for (const p of this.live) {
       if (p.dead) continue;
       const s = p.spec;
+      p.age += dt * 1000;
       if (s.homing) this.home(p, dt);
       p.vy += (s.gravity ?? 0) * dt;
       const nx = p.sprite.x + p.vx * dt;
@@ -132,7 +135,7 @@ export class ProjectileSystem {
       else if (s.rotate !== false) p.sprite.setRotation(Math.atan2(p.vy, p.vx));
       p.glow?.setPosition(p.sprite.x, p.sprite.y);
 
-      if (now >= p.dieAt) {
+      if (p.age >= p.lifeMs) {
         this.kill(p, !!s.explodeOnExpire);
         continue;
       }

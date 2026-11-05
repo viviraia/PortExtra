@@ -126,10 +126,12 @@ export class Juice {
   }
 
   /** Briefly flash a sprite white-ish (tintFill) for hit feedback. */
-  hitFlash(target: Phaser.GameObjects.Sprite, ms = 70, color = 0xffffff): void {
+  hitFlash(target: Phaser.GameObjects.Sprite, ms = 70, color = 0xffffff, after?: () => void): void {
     target.setTintFill(color);
     this.scene.time.delayedCall(ms, () => {
-      if (target.active) target.clearTint();
+      if (!target.active) return;
+      target.clearTint();
+      after?.();
     });
   }
 }
