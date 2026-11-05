@@ -5,6 +5,8 @@ cut through its guardians, gather powerups and coins, and spend what you earn
 on permanent upgrades before the next attempt. Each floor is harder than the
 last. **Your score is how deep you got before you fell.**
 
+![The four biomes](docs/screenshot-biomes.png)
+
 Built with Phaser 3, TypeScript and Vite. Every sprite, tile, sound effect and
 music track is generated from code. There are no asset files.
 
