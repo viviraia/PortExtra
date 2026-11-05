@@ -1,22 +1,22 @@
 import type { CosmeticDef, MetaUpgradeDef } from './types';
 
 /**
- * Permanent Sanctum upgrades bought with coins. Early runs yield ~40–80
- * coins/floor, so a floor 3–5 death pays for one first tier; maxing every
- * upgrade (~33k coins total) takes dozens of runs.
+ * Permanent Sanctum upgrades bought with coins. Tier costs grow ×2.75 per
+ * level: first tiers (200–450) come within the first few runs, while maxing
+ * everything (~115k coins) is a 40+ run goal. See src/run/balanceModel.ts.
  */
 export const META_UPGRADES: Record<string, MetaUpgradeDef> = {
-  vitality: { id: 'vitality', name: 'Vitality', desc: '+15 max HP per level.', maxLevel: 5, costs: [200, 400, 700, 1100, 1600], perLevel: { maxHp: 15 } },
-  strength: { id: 'strength', name: 'Strength', desc: '+6% damage per level.', maxLevel: 5, costs: [250, 500, 850, 1300, 1900], perLevel: { damagePct: 0.06 } },
-  flask: { id: 'flask', name: 'Deep Flask', desc: '+1 potion charge per level.', maxLevel: 2, costs: [450, 1400], perLevel: { potionCharges: 1 } },
-  potency: { id: 'potency', name: 'Potency', desc: 'Potions heal +8% max HP per level.', maxLevel: 3, costs: [250, 600, 1100], perLevel: { potionHeal: 0.08 } },
-  purse: { id: 'purse', name: 'Inheritance', desc: 'Start each run with +20 coins per level.', maxLevel: 3, costs: [300, 700, 1300], perLevel: { startingCoins: 20 } },
-  greed: { id: 'greed', name: 'Greed', desc: '+8% coins per level.', maxLevel: 5, costs: [200, 450, 800, 1250, 1800], perLevel: { coinPct: 0.08 } },
-  toughness: { id: 'toughness', name: 'Toughness', desc: '+3% damage reduction per level.', maxLevel: 5, costs: [300, 600, 1000, 1500, 2100], perLevel: { armor: 0.03 } },
-  precision: { id: 'precision', name: 'Precision', desc: '+3% crit chance per level.', maxLevel: 4, costs: [250, 550, 950, 1450], perLevel: { critChance: 0.03 } },
-  kindling: { id: 'kindling', name: 'Kindling', desc: '+10% embers per level.', maxLevel: 3, costs: [350, 800, 1400], perLevel: { emberPct: 0.1 } },
-  agility: { id: 'agility', name: 'Agility', desc: '-6% dodge cooldown per level.', maxLevel: 3, costs: [200, 500, 900], perLevel: { dodgeCooldownPct: 0.06 } },
-  focus: { id: 'focus', name: 'Focus', desc: '-5% skill cooldowns per level.', maxLevel: 3, costs: [300, 700, 1200], perLevel: { skillCooldownPct: 0.05 } },
+  vitality: { id: 'vitality', name: 'Vitality', desc: '+15 max HP per level.', maxLevel: 5, costs: [200, 550, 1500, 4200, 11500], perLevel: { maxHp: 15 } },
+  strength: { id: 'strength', name: 'Strength', desc: '+6% damage per level.', maxLevel: 5, costs: [250, 700, 1900, 5200, 14500], perLevel: { damagePct: 0.06 } },
+  flask: { id: 'flask', name: 'Deep Flask', desc: '+1 potion charge per level.', maxLevel: 2, costs: [450, 1250], perLevel: { potionCharges: 1 } },
+  potency: { id: 'potency', name: 'Potency', desc: 'Potions heal +8% max HP per level.', maxLevel: 3, costs: [250, 700, 1900], perLevel: { potionHeal: 0.08 } },
+  purse: { id: 'purse', name: 'Inheritance', desc: 'Start each run with +20 coins per level.', maxLevel: 3, costs: [300, 800, 2300], perLevel: { startingCoins: 20 } },
+  greed: { id: 'greed', name: 'Greed', desc: '+8% coins per level.', maxLevel: 5, costs: [200, 550, 1500, 4200, 11500], perLevel: { coinPct: 0.08 } },
+  toughness: { id: 'toughness', name: 'Toughness', desc: '+3% damage reduction per level.', maxLevel: 5, costs: [300, 800, 2300, 6200, 17000], perLevel: { armor: 0.03 } },
+  precision: { id: 'precision', name: 'Precision', desc: '+3% crit chance per level.', maxLevel: 4, costs: [250, 700, 1900, 5200], perLevel: { critChance: 0.03 } },
+  kindling: { id: 'kindling', name: 'Kindling', desc: '+10% embers per level.', maxLevel: 3, costs: [350, 950, 2600], perLevel: { emberPct: 0.1 } },
+  agility: { id: 'agility', name: 'Agility', desc: '-6% dodge cooldown per level.', maxLevel: 3, costs: [200, 550, 1500], perLevel: { dodgeCooldownPct: 0.06 } },
+  focus: { id: 'focus', name: 'Focus', desc: '-5% skill cooldowns per level.', maxLevel: 3, costs: [300, 800, 2300], perLevel: { skillCooldownPct: 0.05 } },
 };
 
 /** Player palette swaps bought in the Wardrobe. */

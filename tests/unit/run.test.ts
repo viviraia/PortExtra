@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { Rng } from '../../src/core/rng';
 import { DEFAULT_UNLOCKS, defaultSave } from '../../src/core/save';
-import { computeHit, enemyDamageToPlayer, itemDamageMult } from '../../src/combat/damage';
+import { computeHit, enemyDamageToPlayer, itemDamageMult, ITEM_LEVEL_SCALING } from '../../src/combat/damage';
 import { ENEMIES, META_UPGRADES, WEAPONS } from '../../src/data';
 import { defaultRarityWeights } from '../../src/data/rarity';
 import type { Difficulty, ItemInstance } from '../../src/data/types';
-import { canAfford, itemPrice, metaUpgradeCost, potionRefillPrice, rerollPrice, totalMetaCost } from '../../src/run/Economy';
+import { BASE_ITEM_PRICE, canAfford, itemPrice, metaUpgradeCost, potionRefillPrice, rerollPrice, totalMetaCost } from '../../src/run/Economy';
 import { chestContents, makeItem, rollEnemyCoins } from '../../src/run/Loot';
 import { RunState } from '../../src/run/RunState';
-import { BASE_STATS, computeStats, emptyScrolls } from '../../src/run/stats';
+import { BASE_STATS, computeStats, emptyScrolls, SCROLL_HP, SCROLL_HP_VIGOR } from '../../src/run/stats';
 
 function diff(floor: number): Difficulty {
   return {
@@ -34,7 +34,7 @@ describe('stats', () => {
       equipped: [makeItem('weapon', 'rusty_sword', 1, 'rare', [{ id: 'of_the_bear', value: 20 }])],
       scrolls: { might: 1, cunning: 0, vigor: 2 },
     });
-    expect(s.maxHp).toBe(100 + 30 + 20 + 10 + 40);
+    expect(s.maxHp).toBe(100 + 30 + 20 + SCROLL_HP + 2 * SCROLL_HP_VIGOR);
     expect(s.armor).toBe(0.75);
     expect(s.skillCooldownPct).toBe(0.6);
     expect(s.moveSpeedPct).toBeGreaterThanOrEqual(-0.5);
@@ -67,7 +67,7 @@ describe('damage', () => {
   });
 
   it('item level, rarity, scrolls and crits scale damage', () => {
-    expect(itemDamageMult(makeItem('weapon', 'rusty_sword', 10))).toBeCloseTo(1.72);
+    expect(itemDamageMult(makeItem('weapon', 'rusty_sword', 10))).toBeCloseTo(1 + 9 * ITEM_LEVEL_SCALING);
     expect(itemDamageMult(makeItem('weapon', 'rusty_sword', 1, 'epic', [{ id: 'brutal', value: 0.3 }]))).toBeCloseTo(1.3 * 1.3);
     const rng = new Rng(2);
     const base = { baseDamage: 10, mult: 1, track: 'might' as const, stats, rng, playerHpFrac: 1, noVariance: true };
@@ -121,10 +121,10 @@ describe('RunState', () => {
     const run = RunState.create(1, defaultSave());
     run.damage(50);
     expect(run.addScroll('vigor')).toBe(1);
-    expect(run.stats.maxHp).toBe(120);
-    expect(run.hp).toBe(70);
+    expect(run.stats.maxHp).toBe(100 + SCROLL_HP_VIGOR);
+    expect(run.hp).toBe(50 + SCROLL_HP_VIGOR);
     run.addScroll('might');
-    expect(run.stats.maxHp).toBe(130);
+    expect(run.stats.maxHp).toBe(100 + SCROLL_HP_VIGOR + SCROLL_HP);
   });
 
   it('potions heal and refill; revive works', () => {
@@ -163,10 +163,11 @@ describe('economy', () => {
   it('prices scale with rarity, level and discount', () => {
     const c = makeItem('weapon', 'spear', 1, 'common');
     const l = makeItem('weapon', 'spear', 10, 'legendary');
-    expect(itemPrice(c)).toBe(120);
+    // Balance pass: prices track per-floor coin income (see balance.test.ts).
+    expect(itemPrice(c)).toBe(Math.round(BASE_ITEM_PRICE.weapon / 5) * 5);
     expect(itemPrice(l)).toBeGreaterThan(itemPrice(c) * 5);
-    expect(itemPrice(c, { shopDiscount: 0.25 })).toBe(90);
-    expect(potionRefillPrice(5)).toBe(90);
+    expect(itemPrice(c, { shopDiscount: 0.25 })).toBe(20);
+    expect(potionRefillPrice(5)).toBe(105);
     expect(rerollPrice(1, 1)).toBe(rerollPrice(1, 0) * 2);
     expect(metaUpgradeCost(META_UPGRADES.vitality, 5)).toBe(Infinity);
     expect(canAfford(100, Infinity)).toBe(false);
@@ -183,8 +184,9 @@ describe('economy', () => {
       return c;
     };
     const f1 = floorCoins(1);
+    // Balance pass raised early coin drops (floor 1 ≈ 60–120 with 14 enemies).
     expect(f1).toBeGreaterThanOrEqual(40);
-    expect(f1).toBeLessThanOrEqual(90);
+    expect(f1).toBeLessThanOrEqual(130);
     const runTo = (depth: number) => { let t = 0; for (let f = 1; f <= depth; f++) t += floorCoins(f); return t; };
     const runCoins = (runTo(3) + runTo(4) + runTo(5)) / 3;
     const firstTiers = Object.values(META_UPGRADES).map((m) => m.costs[0]).sort((a, b) => a - b);

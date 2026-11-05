@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DOOR_SIDE_Y0, DOOR_SIDE_Y1, DOOR_VERT_X0, DOOR_VERT_X1, ROOM_H, ROOM_W } from '../../src/config';
 import { floorSeed } from '../../src/core/rng';
 import { BIOME_ORDER, Tile, type RoomType } from '../../src/data/types';
-import { biomeForFloor, getDifficulty, isBossFloor } from '../../src/world/difficulty';
+import { biomeForFloor, getDifficulty, HP_GROWTH, isBossFloor, LOOP_HP_MULT } from '../../src/world/difficulty';
 import { generateFloor, templatesFor } from '../../src/world/FloorGenerator';
 import { LEGEND, ROOMS } from '../../src/world/rooms';
 import { validateFloor } from '../../src/world/validate';
@@ -81,7 +81,7 @@ describe('difficulty', () => {
   it('is monotonic with depth', () => {
     let prev = getDifficulty(1);
     expect(prev.hpMult).toBeCloseTo(1);
-    expect(prev.eliteChance).toBeCloseTo(0.05);
+    expect(prev.eliteChance).toBeCloseTo(0.04); // balance pass: rarer elites early
     for (let f = 2; f <= 60; f++) {
       const d = getDifficulty(f);
       expect(d.hpMult).toBeGreaterThan(prev.hpMult);
@@ -94,7 +94,7 @@ describe('difficulty', () => {
     }
     expect(getDifficulty(60).eliteChance).toBe(0.5);
     expect(getDifficulty(60).enemiesPerRoom).toBeLessThanOrEqual(8);
-    expect(getDifficulty(21).hpMult / getDifficulty(20).hpMult).toBeCloseTo(1.12 * 1.5);
+    expect(getDifficulty(21).hpMult / getDifficulty(20).hpMult).toBeCloseTo(HP_GROWTH * LOOP_HP_MULT);
   });
 });
 

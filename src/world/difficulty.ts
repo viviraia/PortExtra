@@ -33,6 +33,19 @@ export function rarityWeightsForFloor(floor: number): Record<Rarity, number> {
   };
 }
 
+/** Per-floor growth of enemy HP / damage, and the extra multiplier per Ascension loop. */
+export const HP_GROWTH = 1.13;
+export const DMG_GROWTH = 1.09;
+export const LOOP_HP_MULT = 1.7;
+export const LOOP_DMG_MULT = 1.4;
+
+/** Elite chance: rare early, common deep; Ascension loops add more. */
+export function eliteChanceForFloor(floor: number): number {
+  const d = Math.max(0, floor - 1);
+  const loop = loopForFloor(floor);
+  return Math.min(0.5, Math.min(0.3, 0.04 + 0.012 * d) + 0.1 * loop);
+}
+
 export function getDifficulty(floor: number): Difficulty {
   const f = Math.max(1, Math.floor(floor));
   const loop = loopForFloor(f);
@@ -42,10 +55,10 @@ export function getDifficulty(floor: number): Difficulty {
     biome: biomeForFloor(f),
     loop,
     isBoss: isBossFloor(f),
-    hpMult: Math.pow(1.12, d) * Math.pow(1.5, loop),
-    dmgMult: Math.pow(1.08, d) * Math.pow(1.25, loop),
+    hpMult: Math.pow(HP_GROWTH, d) * Math.pow(LOOP_HP_MULT, loop),
+    dmgMult: Math.pow(DMG_GROWTH, d) * Math.pow(LOOP_DMG_MULT, loop),
     enemiesPerRoom: Math.min(8, Math.round(2 + d * 0.22)),
-    eliteChance: Math.min(0.5, 0.05 + 0.02 * d),
+    eliteChance: eliteChanceForFloor(f),
     itemLevel: f,
     rarityWeights: rarityWeightsForFloor(f),
   };

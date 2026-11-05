@@ -94,10 +94,17 @@ export function rollItem(rng: Rng, opts: RollItemOpts): ItemInstance {
   return makeItem(kind, id, level, rarity, rollAffixes(rng, kind, rarity));
 }
 
-/** Coins per floor grow 4%/floor; elites drop 3x. Before PlayerStats.coinPct (see applyCoinBonus). */
+/** Per-enemy coin growth per floor (enemy counts also grow with depth). */
+export const ENEMY_COIN_GROWTH = 0.01;
+/** Chest coin growth per floor. */
+export const CHEST_COIN_GROWTH = 0.05;
+/** Chest coin roll range at floor 1. */
+export const CHEST_COINS: [number, number] = [16, 30];
+
+/** Coins per enemy grow ENEMY_COIN_GROWTH/floor; elites drop 3x. Before PlayerStats.coinPct (see applyCoinBonus). */
 export function rollEnemyCoins(rng: Rng, def: EnemyDef, difficulty: Difficulty, elite = false): number {
   const base = rng.int(def.coins[0], def.coins[1]);
-  return Math.max(1, Math.round(base * (1 + 0.04 * (difficulty.floor - 1)) * (elite ? 3 : 1)));
+  return Math.max(1, Math.round(base * (1 + ENEMY_COIN_GROWTH * (difficulty.floor - 1)) * (elite ? 3 : 1)));
 }
 
 export function applyCoinBonus(amount: number, stats: PlayerStats): number {
@@ -120,7 +127,7 @@ export interface ChestContents {
 
 /** Treasure chest: coins always, an item 70% of the time (rare+ 1 in 3), sometimes a heal. */
 export function chestContents(rng: Rng, difficulty: Difficulty, unlocked: readonly string[]): ChestContents {
-  const coins = Math.round(rng.int(10, 22) * (1 + 0.06 * (difficulty.floor - 1)));
+  const coins = Math.round(rng.int(CHEST_COINS[0], CHEST_COINS[1]) * (1 + CHEST_COIN_GROWTH * (difficulty.floor - 1)));
   const item = rng.chance(0.7)
     ? rollItem(rng, { difficulty, unlocked, minRarity: rng.chance(0.33) ? 'rare' : 'common' })
     : null;

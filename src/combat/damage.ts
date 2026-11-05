@@ -6,7 +6,7 @@ import type { ItemInstance, PlayerStats, StatTrack, StatusId } from '../data/typ
 import { trackDamageMult } from '../run/stats';
 
 /** Item damage growth per item level above 1. */
-export const ITEM_LEVEL_SCALING = 0.08;
+export const ITEM_LEVEL_SCALING = 0.065;
 /** Base crit multiplier before PlayerStats.critDamage. */
 export const BASE_CRIT_MULT = 1.5;
 /** Hits are randomized by ±DAMAGE_VARIANCE. */

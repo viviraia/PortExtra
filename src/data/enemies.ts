@@ -25,22 +25,22 @@ import type { EnemyDef } from './types';
 export const ENEMIES: Record<string, EnemyDef> = {
   zombie: {
     id: 'zombie', name: 'Shambler', biomes: ['cells', 'ramparts'], minFloor: 1, weight: 10, ai: 'walker',
-    hp: 40, damage: 10, speed: 38, w: 12, h: 22, coins: [2, 4], emberChance: 0.02,
+    hp: 50, damage: 10, speed: 38, w: 12, h: 22, coins: [3, 6], emberChance: 0.02,
     params: { aggroRange: 160, attackRange: 22, windupMs: 450, cooldownMs: 1100 },
   },
   rat: {
     id: 'rat', name: 'Plague Rat', biomes: ['cells'], minFloor: 1, weight: 8, ai: 'jumper',
-    hp: 20, damage: 8, speed: 85, w: 12, h: 8, coins: [1, 2], emberChance: 0.01,
+    hp: 30, damage: 8, speed: 85, w: 12, h: 8, coins: [2, 3], emberChance: 0.01,
     params: { aggroRange: 170, attackRange: 70, windupMs: 380, cooldownMs: 1300, jumpVx: 170, jumpVy: -200 },
   },
   skeleton_archer: {
     id: 'skeleton_archer', name: 'Bone Archer', biomes: ['cells', 'ramparts'], minFloor: 2, weight: 6, ai: 'archer',
-    hp: 30, damage: 12, speed: 40, w: 12, h: 22, coins: [2, 5], emberChance: 0.03,
+    hp: 40, damage: 12, speed: 40, w: 12, h: 22, coins: [3, 6], emberChance: 0.03,
     params: { aggroRange: 240, attackRange: 220, windupMs: 650, cooldownMs: 1800, projectileSpeed: 220, keepDistance: 70 },
   },
   bat: {
     id: 'bat', name: 'Gloom Bat', biomes: ['cells', 'ramparts'], minFloor: 1, weight: 6, ai: 'flyer', flying: true,
-    hp: 22, damage: 9, speed: 60, w: 12, h: 10, coins: [1, 3], emberChance: 0.02,
+    hp: 32, damage: 9, speed: 60, w: 12, h: 10, coins: [2, 4], emberChance: 0.02,
     params: { aggroRange: 190, attackRange: 110, windupMs: 400, cooldownMs: 1600, swoopSpeed: 210 },
   },
   shield_knight: {
@@ -65,27 +65,27 @@ export const ENEMIES: Record<string, EnemyDef> = {
   },
   cultist: {
     id: 'cultist', name: 'Ink Cultist', biomes: ['library', 'throne'], minFloor: 11, weight: 7, ai: 'caster',
-    hp: 38, damage: 14, speed: 30, w: 12, h: 22, coins: [3, 6], emberChance: 0.05,
+    hp: 46, damage: 14, speed: 30, w: 12, h: 22, coins: [3, 6], emberChance: 0.05,
     params: { aggroRange: 240, attackRange: 200, windupMs: 700, cooldownMs: 2200, projectileSpeed: 120, homing: 2.2, teleportCooldownMs: 5000 },
   },
   ghost: {
     id: 'ghost', name: 'Hollow Shade', biomes: ['library'], minFloor: 11, weight: 6, ai: 'ghost', flying: true,
-    hp: 34, damage: 13, speed: 45, w: 14, h: 18, coins: [2, 5], emberChance: 0.04,
+    hp: 42, damage: 13, speed: 45, w: 14, h: 18, coins: [2, 5], emberChance: 0.04,
     params: { aggroRange: 260, attackRange: 24, windupMs: 450, cooldownMs: 1400, phaseMs: 1500 },
   },
   book_mimic: {
     id: 'book_mimic', name: 'Tome Mimic', biomes: ['library'], minFloor: 11, weight: 5, ai: 'ambusher',
-    hp: 45, damage: 16, speed: 70, w: 14, h: 12, coins: [5, 9], emberChance: 0.06,
+    hp: 54, damage: 16, speed: 70, w: 14, h: 12, coins: [5, 9], emberChance: 0.06,
     params: { aggroRange: 200, attackRange: 80, windupMs: 250, cooldownMs: 1100, wakeRange: 60, jumpVx: 200, jumpVy: -220 },
   },
   royal_guard: {
     id: 'royal_guard', name: 'Royal Guard', biomes: ['throne'], minFloor: 16, weight: 7, ai: 'brute',
-    hp: 90, damage: 20, speed: 30, w: 18, h: 28, coins: [5, 9], emberChance: 0.07,
+    hp: 80, damage: 20, speed: 30, w: 18, h: 28, coins: [5, 9], emberChance: 0.07,
     params: { aggroRange: 180, attackRange: 40, windupMs: 900, cooldownMs: 1800, slamRadius: 56 },
   },
   necromancer: {
     id: 'necromancer', name: 'Bone Priest', biomes: ['library', 'throne'], minFloor: 12, weight: 4, ai: 'summoner',
-    hp: 44, damage: 10, speed: 30, w: 12, h: 24, coins: [5, 8], emberChance: 0.08,
+    hp: 52, damage: 10, speed: 30, w: 12, h: 24, coins: [5, 8], emberChance: 0.08,
     params: { aggroRange: 240, attackRange: 200, windupMs: 900, cooldownMs: 4500, summonCount: 2, maxMinions: 4, keepDistance: 110 },
   },
 };

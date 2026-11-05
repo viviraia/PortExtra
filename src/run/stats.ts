@@ -31,8 +31,8 @@ export const BASE_STATS: Readonly<PlayerStats> = Object.freeze({
 /** Damage bonus per scroll level on items of that track. */
 export const SCROLL_TRACK_DAMAGE = 0.15;
 /** Max HP per scroll (might / cunning), vigor scrolls give more. */
-export const SCROLL_HP = 10;
-export const SCROLL_HP_VIGOR = 20;
+export const SCROLL_HP = 7;
+export const SCROLL_HP_VIGOR = 15;
 
 export function emptyScrolls(): Record<StatTrack, number> {
   return { might: 0, cunning: 0, vigor: 0 };

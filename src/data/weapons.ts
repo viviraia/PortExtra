@@ -61,7 +61,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
       ],
     },
     onHit: { status: 'stun', chance: 0.35, durationMs: 900 },
-    unlockCost: 6,
+    unlockCost: 9,
   },
   spear: {
     id: 'spear',
@@ -97,7 +97,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
     },
     onHit: { status: 'burn', chance: 0.5, durationMs: 3000 },
     special: 'crit-vs-burning',
-    unlockCost: 8,
+    unlockCost: 12,
   },
   frost_axe: {
     id: 'frost_axe',
@@ -115,7 +115,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
     },
     onHit: { status: 'freeze', chance: 0.3, durationMs: 1600 },
     special: 'crit-vs-frozen',
-    unlockCost: 10,
+    unlockCost: 15,
   },
   blood_scythe: {
     id: 'blood_scythe',
@@ -134,7 +134,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
     },
     onHit: { status: 'bleed', chance: 0.45, durationMs: 4000 },
     special: 'lifesteal-on-bleed',
-    unlockCost: 14,
+    unlockCost: 21,
   },
   rapier: {
     id: 'rapier',
@@ -154,7 +154,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
       ],
     },
     special: 'crit-final-hit',
-    unlockCost: 12,
+    unlockCost: 18,
   },
   hunter_bow: {
     id: 'hunter_bow',
@@ -175,7 +175,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
     track: 'cunning',
     baseDamage: 6,
     ranged: { projectile: 'bolt', cooldownMs: 180, dmg: 1.0, speed: 480, lifeMs: 900, pierce: 1 },
-    unlockCost: 9,
+    unlockCost: 14,
   },
   throwing_knives: {
     id: 'throwing_knives',
@@ -197,7 +197,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
     baseDamage: 15,
     ranged: { projectile: 'fireball', cooldownMs: 700, dmg: 1.0, speed: 300, gravity: 500, lifeMs: 1800 },
     onHit: { status: 'burn', chance: 0.7, durationMs: 3000 },
-    unlockCost: 10,
+    unlockCost: 15,
   },
   storm_rod: {
     id: 'storm_rod',
@@ -209,7 +209,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
     ranged: { projectile: 'spark', cooldownMs: 450, dmg: 1.0, speed: 520, lifeMs: 700 },
     onHit: { status: 'stun', chance: 0.1, durationMs: 400 },
     special: 'chain-lightning',
-    unlockCost: 16,
+    unlockCost: 24,
   },
   oak_buckler: {
     id: 'oak_buckler',
@@ -241,6 +241,6 @@ export const WEAPONS: Record<string, WeaponDef> = {
       bash: { dmg: 1.2, windupMs: 120, activeMs: 100, recoverMs: 280, reach: 26, height: 32, knockback: 300, hitstopMs: 70, fx: 'smash' },
     },
     onHit: { status: 'stun', chance: 0.5, durationMs: 1000 },
-    unlockCost: 12,
+    unlockCost: 18,
   },
 };

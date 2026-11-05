@@ -64,7 +64,7 @@ export const SKILLS: Record<string, SkillDef> = {
     cooldownMs: 16000,
     damage: 6,
     params: { durationMs: 12000, fireRateMs: 550, range: 180, projectileSpeed: 420 },
-    unlockCost: 6,
+    unlockCost: 9,
   },
   phantom_dash: {
     id: 'phantom_dash',
@@ -75,7 +75,7 @@ export const SKILLS: Record<string, SkillDef> = {
     cooldownMs: 5000,
     damage: 18,
     params: { distance: 110, iframesMs: 350 },
-    unlockCost: 8,
+    unlockCost: 12,
   },
   war_cry: {
     id: 'war_cry',
@@ -86,7 +86,7 @@ export const SKILLS: Record<string, SkillDef> = {
     cooldownMs: 20000,
     damage: 0,
     params: { durationMs: 8000, damagePct: 0.4, moveSpeedPct: 0.2 },
-    unlockCost: 7,
+    unlockCost: 10,
   },
   chain_lightning: {
     id: 'chain_lightning',
@@ -98,7 +98,7 @@ export const SKILLS: Record<string, SkillDef> = {
     damage: 22,
     status: { status: 'stun', chance: 0.4, durationMs: 500 },
     params: { jumps: 4, range: 110 },
-    unlockCost: 12,
+    unlockCost: 18,
   },
   poison_cloud: {
     id: 'poison_cloud',
@@ -110,7 +110,7 @@ export const SKILLS: Record<string, SkillDef> = {
     damage: 5,
     status: { status: 'poison', chance: 1, durationMs: 4000 },
     params: { radius: 48, durationMs: 6000, tickMs: 400, throwSpeed: 220 },
-    unlockCost: 10,
+    unlockCost: 15,
   },
   orbiting_blades: {
     id: 'orbiting_blades',
@@ -121,7 +121,7 @@ export const SKILLS: Record<string, SkillDef> = {
     cooldownMs: 18000,
     damage: 7,
     params: { count: 3, radius: 30, durationMs: 8000, tickMs: 300 },
-    unlockCost: 14,
+    unlockCost: 21,
   },
   meteor: {
     id: 'meteor',
@@ -133,6 +133,6 @@ export const SKILLS: Record<string, SkillDef> = {
     damage: 80,
     status: { status: 'burn', chance: 1, durationMs: 4000 },
     params: { radius: 56, delayMs: 900 },
-    unlockCost: 20,
+    unlockCost: 25,
   },
 };

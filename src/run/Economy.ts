@@ -3,19 +3,21 @@ import { RARITY_INFO } from '../data/rarity';
 import type { ItemInstance, MetaUpgradeDef, PlayerStats } from '../data/types';
 
 /** Merchant base price by kind before rarity/level multipliers. */
-export const BASE_ITEM_PRICE = { weapon: 120, skill: 110, relic: 140 } as const;
+export const BASE_ITEM_PRICE = { weapon: 28, skill: 26, relic: 32 } as const;
+/** Price growth per item level: tracks per-floor coin income (≈ 60–120% of a floor's coins). */
+export const PRICE_LEVEL_GROWTH = 0.35;
 
 const round5 = (n: number) => Math.max(5, Math.round(n / 5) * 5);
 
-/** Merchant price: base × rarity × (1 + 10%/item level) × (1 − discount). */
+/** Merchant price: base × rarity × (1 + PRICE_LEVEL_GROWTH × (level − 1)) × (1 − discount). */
 export function itemPrice(inst: ItemInstance, stats?: Pick<PlayerStats, 'shopDiscount'>): number {
-  const raw = BASE_ITEM_PRICE[inst.kind] * RARITY_INFO[inst.rarity].priceMult * (1 + 0.1 * (inst.level - 1));
+  const raw = BASE_ITEM_PRICE[inst.kind] * RARITY_INFO[inst.rarity].priceMult * (1 + PRICE_LEVEL_GROWTH * (inst.level - 1));
   return round5(raw * (1 - (stats?.shopDiscount ?? 0)));
 }
 
 /** Merchant potion refill (all charges). */
 export function potionRefillPrice(floor: number, stats?: Pick<PlayerStats, 'shopDiscount'>): number {
-  return round5((40 + 10 * floor) * (1 - (stats?.shopDiscount ?? 0)));
+  return round5((30 + 15 * floor) * (1 - (stats?.shopDiscount ?? 0)));
 }
 
 /** Rerolling a merchant's stock; doubles each time on the same floor. */
