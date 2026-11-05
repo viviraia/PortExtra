@@ -32,6 +32,7 @@ import { buildFloor, type BuiltFloor } from '../world/FloorBuilder';
 import { getDifficulty } from '../world/difficulty';
 import { generateFloor } from '../world/FloorGenerator';
 import { Lighting } from './game/Lighting';
+import { Ambience } from './game/Ambience';
 
 const BIOME_DARKNESS: Record<string, number> = { cells: 0.62, ramparts: 0.4, library: 0.55, throne: 0.5 };
 const ELITE_AFFIXES: EliteAffix[] = ['swift', 'armored', 'vampiric', 'explosive', 'frenzied'];
@@ -49,6 +50,7 @@ export class GameScene extends Phaser.Scene implements World {
   pickups!: PickupSystem;
   interactables: Interactable[] = [];
   lighting!: Lighting;
+  private ambience!: Ambience;
   boss: Enemy | null = null;
   private exitPortal: ExitPortal | null = null;
   private bgFar: Phaser.GameObjects.TileSprite | null = null;
@@ -56,6 +58,7 @@ export class GameScene extends Phaser.Scene implements World {
   private cursor: Phaser.GameObjects.Image | null = null;
   private focused: Interactable | null = null;
   private lookAhead = 0;
+  private lookDown = 0;
   private ending = false;
   private paused = false;
   /** Modal UI open (merchant, swap, altar): gameplay input suspended. */
@@ -102,6 +105,7 @@ export class GameScene extends Phaser.Scene implements World {
     this.boss = null;
     this.exitPortal = null;
     this.focused = null;
+    bus.emit('prompt', { text: null });
     this.ending = false;
     this.paused = false;
     this.modalOpen = false;
@@ -135,6 +139,7 @@ export class GameScene extends Phaser.Scene implements World {
     this.lighting.add(() => (this.player.active ? { x: this.player.centerX, y: this.player.centerY - 2, radius: 90, intensity: 0.95 } : null));
 
     this.spawnFromLayout();
+    this.ambience = new Ambience(this, biome);
 
     const cam = this.cameras.main;
     cam.setBounds(0, 0, this.floor.worldW, this.floor.worldH);
@@ -314,6 +319,7 @@ export class GameScene extends Phaser.Scene implements World {
     this.updateInteractables(dt);
     this.updateCamera(dt);
     this.updateParallax();
+    this.ambience.update();
     this.lighting.update(this.now);
     this.trackRooms();
 
@@ -365,7 +371,14 @@ export class GameScene extends Phaser.Scene implements World {
   private updateCamera(dt: number): void {
     const target = this.player.facing * 28 + this.player.body.velocity.x * 0.08;
     this.lookAhead = Phaser.Math.Linear(this.lookAhead, target, Math.min(1, dt * 2.5));
-    this.cameras.main.setFollowOffset(-this.lookAhead, 16);
+    // Look down while falling fast so you can see where you'll land.
+    const vy = this.player.body.velocity.y;
+    const downTarget = vy > 220 && !this.player.grounded ? Math.min(70, (vy - 220) * 0.35) : 0;
+    this.lookDown = Phaser.Math.Linear(this.lookDown, downTarget, Math.min(1, dt * (downTarget > this.lookDown ? 3 : 5)));
+    const cam = this.cameras.main;
+    cam.setFollowOffset(-this.lookAhead, 16 - this.lookDown);
+    // Catch up faster vertically during long drops so the player never leaves the frame.
+    cam.setLerp(0.12, this.lookDown > 20 ? 0.25 : 0.12);
   }
 
   private updateParallax(): void {
@@ -800,6 +813,14 @@ export class GameScene extends Phaser.Scene implements World {
       },
       scroll: (t: StatTrack) => this.grantScroll(t),
       heal: () => this.run.heal(1e9),
+      /** Teleport next to the first interactable of a kind: merchant | altar | chest | exit. */
+      tp: (kind: string) => {
+        const map: Record<string, unknown> = { merchant: Merchant, altar: Altar, chest: Chest, exit: ExitPortal };
+        const it = this.interactables.find((i) => i instanceof (map[kind] as any) && i.active);
+        if (!it) return false;
+        this.player.body.reset(it.x - 14, it.y - 2);
+        return true;
+      },
       state: () => ({
         floor: this.run.floor,
         hp: this.run.hp,

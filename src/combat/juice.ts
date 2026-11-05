@@ -23,6 +23,7 @@ export class Juice {
   /** Scene time (ms) until which gameplay is frozen. */
   hitstopUntil = 0;
   private numbers: Phaser.GameObjects.BitmapText[] = [];
+  private emitters = new Map<string, Phaser.GameObjects.Particles.ParticleEmitter>();
 
   constructor(private scene: Phaser.Scene) {}
 
@@ -81,7 +82,12 @@ export class Juice {
   burst(x: number, y: number, o: BurstOpts = {}): void {
     const key = o.key ?? FX.particle;
     if (!this.scene.textures.exists(key)) return;
-    const em = this.scene.add.particles(x, y, key, {
+    // Emitters are pooled per (texture, blend, depth): re-configuring an
+    // existing emitter is far cheaper than creating/destroying one per burst.
+    const depth = o.depth ?? 600;
+    const poolKey = `${key}|${o.blendAdd ? 1 : 0}|${depth}`;
+    let em = this.emitters.get(poolKey);
+    const cfg: Phaser.Types.GameObjects.Particles.ParticleEmitterConfig = {
       speed: { min: o.speed?.[0] ?? 40, max: o.speed?.[1] ?? 140 },
       angle: { min: o.angle?.[0] ?? 0, max: o.angle?.[1] ?? 360 },
       lifespan: { min: o.life?.[0] ?? 200, max: o.life?.[1] ?? 500 },
@@ -90,11 +96,17 @@ export class Juice {
       tint: o.tint ?? 0xffffff,
       blendMode: o.blendAdd ? Phaser.BlendModes.ADD : Phaser.BlendModes.NORMAL,
       emitting: false,
-    });
-    em.setDepth(o.depth ?? 600);
-    em.explode(o.count ?? 10);
-    this.scene.time.delayedCall((o.life?.[1] ?? 500) + 50, () => em.destroy());
+    };
+    if (!em || !em.active) {
+      em = this.scene.add.particles(0, 0, key, cfg);
+      em.setDepth(depth);
+      this.emitters.set(poolKey, em);
+    } else {
+      em.setConfig(cfg);
+    }
+    em.explode(o.count ?? 10, x, y);
   }
+
 
   /** Play a one-shot animated effect sprite. */
   fx(x: number, y: number, anim: string, opts: { flipX?: boolean; tint?: number; scale?: number; depth?: number; angle?: number; add?: boolean } = {}): Phaser.GameObjects.Sprite | null {
