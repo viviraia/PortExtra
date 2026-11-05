@@ -189,7 +189,9 @@ export class GameScene extends Phaser.Scene implements World {
   private spawnFromLayout(): void {
     const L = this.layout;
     const d = this.difficulty;
-    const pool = Object.values(ENEMIES).filter((e) => e.biomes.includes(L.biome) && e.minFloor <= Math.max(1, ((L.floor - 1) % 20) + 1 + L.floor > 20 ? 99 : 0) + L.floor);
+    // After the first loop every enemy of the biome is eligible.
+    const effFloor = L.floor > 20 ? Infinity : L.floor;
+    const pool = Object.values(ENEMIES).filter((e) => e.biomes.includes(L.biome) && e.minFloor <= effFloor);
     for (const s of L.spawns) {
       const wx = s.tx * TILE + TILE / 2;
       const wy = (s.ty + 1) * TILE;

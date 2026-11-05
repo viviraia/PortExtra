@@ -31,7 +31,7 @@ export const ENEMIES: Record<string, EnemyDef> = {
   rat: {
     id: 'rat', name: 'Plague Rat', biomes: ['cells'], minFloor: 1, weight: 8, ai: 'jumper',
     hp: 20, damage: 8, speed: 85, w: 12, h: 8, coins: [1, 2], emberChance: 0.01,
-    params: { aggroRange: 170, attackRange: 70, windupMs: 300, cooldownMs: 1300, jumpVx: 170, jumpVy: -200 },
+    params: { aggroRange: 170, attackRange: 70, windupMs: 380, cooldownMs: 1300, jumpVx: 170, jumpVy: -200 },
   },
   skeleton_archer: {
     id: 'skeleton_archer', name: 'Bone Archer', biomes: ['cells', 'ramparts'], minFloor: 2, weight: 6, ai: 'archer',

@@ -84,7 +84,7 @@ export class AmbusherBrain extends PhaseBrain<Phase> {
             // Snap again quickly.
             e.facePlayer();
             e.telegraph();
-            this.set(e, 'windup', this.windupMs(e));
+            this.set(e, 'windup', this.windupMs(e, 1.3));
           } else {
             this.chain = 0;
             this.cooldown(e, 1.3);
