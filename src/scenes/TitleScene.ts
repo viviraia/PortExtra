@@ -1,5 +1,6 @@
 /** Title screen: atmospheric spire backdrop, logo, main menu. */
 import Phaser from 'phaser';
+import { TouchScene } from '../core/input/TouchScene';
 import { bgFarTex, bgMidTex, FX, UI } from '../art/keys';
 import { UI_COLORS } from '../art/palette';
 import { GAME_H, GAME_W } from '../config';
@@ -79,7 +80,7 @@ export class TitleScene extends Phaser.Scene {
       txt(this, GAME_W / 2, 194, `Deepest descent: ${st.deepest}   -   Runs: ${st.runs}`, { origin: 0.5, tint: UI_COLORS.gold });
     }
     txt(this, GAME_W / 2, GAME_H - 10, 'an original roguelite  -  v0.1', { origin: 0.5, tint: 0x4a4458 });
-    txt(this, 6, GAME_H - 10, input.lastDevice === 'touch' || input.touchHint ? '' : 'ENTER select  ARROWS move', { tint: 0x4a4458 });
+    txt(this, 6, GAME_H - 10, input.lastDevice === 'touch' || TouchScene.shouldShow(saves.data.settings.touchControls) ? '' : 'ENTER select  ARROWS move', { tint: 0x4a4458 });
 
     this.cameras.main.fadeIn(800, 0, 0, 0);
     this.events.on(Phaser.Scenes.Events.RESUME, () => input.releaseAll());

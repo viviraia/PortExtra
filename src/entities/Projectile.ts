@@ -3,6 +3,7 @@
  * collision against the floor grid, overlap checks against enemies/player.
  */
 import Phaser from 'phaser';
+import { DEPTH } from '../config';
 import { FX, projTex, type ProjectileKey } from '../art/keys';
 import type { Enemy } from './Enemy';
 import type { PlayerHit, World } from './World';
@@ -81,14 +82,16 @@ export class ProjectileSystem {
     if (!sprite) sprite = scene.add.image(0, 0, key);
     sprite.setTexture(scene.textures.exists(key) ? key : FX.particle);
     // Enemy projectiles render above the darkness layer so threats are always readable.
-    sprite.setActive(true).setVisible(true).setPosition(spec.x, spec.y).setDepth(spec.owner === 'enemy' ? 803 : 550).setAlpha(1);
+    // Enemy shots draw above the darkness so they stay dodgeable in unlit areas.
+    const aboveDark = spec.owner === 'enemy';
+    sprite.setActive(true).setVisible(true).setPosition(spec.x, spec.y).setDepth(aboveDark ? DEPTH.aboveDarkProjectile : 550).setAlpha(1);
     sprite.setScale(spec.scale ?? 1);
     sprite.setAngle(0);
     if (spec.tint !== undefined) sprite.setTint(spec.tint);
     else sprite.clearTint();
     let glow: Phaser.GameObjects.Image | null = null;
     if (spec.glow !== undefined && scene.textures.exists(FX.glow)) {
-      glow = scene.add.image(spec.x, spec.y, FX.glow).setTint(spec.glow).setBlendMode(Phaser.BlendModes.ADD).setScale(0.35).setAlpha(0.6).setDepth(spec.owner === 'enemy' ? 802 : 549);
+      glow = scene.add.image(spec.x, spec.y, FX.glow).setTint(spec.glow).setBlendMode(Phaser.BlendModes.ADD).setScale(0.35).setAlpha(0.6).setDepth(aboveDark ? DEPTH.aboveDark : 549);
     }
     this.live.push({
       spec,

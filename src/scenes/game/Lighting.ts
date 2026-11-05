@@ -5,7 +5,7 @@
  */
 import Phaser from 'phaser';
 import { FX } from '../../art/keys';
-import { GAME_H, GAME_W } from '../../config';
+import { DEPTH, GAME_H, GAME_W } from '../../config';
 
 export interface LightSource {
   x: number;
@@ -35,7 +35,7 @@ export class Lighting {
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setScale(LIGHT_SCALE)
-      .setDepth(800);
+      .setDepth(DEPTH.darkness);
     // Smooth light falloff (the rest of the game stays nearest-neighbour).
     this.rt.texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
   }
@@ -80,7 +80,7 @@ export class Lighting {
       if (l.color !== undefined) {
         let g = this.glowLayer[gi];
         if (!g) {
-          g = this.scene.add.image(0, 0, FX.glow).setBlendMode(Phaser.BlendModes.ADD).setDepth(801).setScrollFactor(0);
+          g = this.scene.add.image(0, 0, FX.glow).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.lightGlow).setScrollFactor(0);
           this.glowLayer[gi] = g;
         }
         g.setVisible(true).setPosition(sx, sy).setTint(l.color).setScale((r * 1.2) / 64).setAlpha(0.22 * (l.intensity ?? 1) * fl);

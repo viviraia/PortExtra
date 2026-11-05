@@ -313,10 +313,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const topY = Math.floor((b.bottom + 2) / TILE) * TILE;
       b.y = topY - b.height;
       b.velocity.y = 0;
-      // Step off sideways onto the adjacent floor (feet are level with it).
+      // Step off sideways with a small hop: shaft ladders end one tile above
+      // the floor next to a floor hole, so the hop clears the hole either way.
       if (Math.abs(input.moveX) > 0.5) {
         this.exitClimb();
+        this.facing = input.moveX > 0 ? 1 : -1;
         this.body.velocity.x = input.moveX * RUN_SPEED;
+        this.body.velocity.y = -220;
       }
       return;
     }

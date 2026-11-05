@@ -11,7 +11,7 @@ import { bus } from '../../core/events';
 import { BOSSES } from '../../data';
 import type { BossDef, EnemyDef } from '../../data/types';
 import { Tile } from '../../data/types';
-import { ROOM_H, ROOM_W, TILE, DOOR_SIDE_Y0, DOOR_SIDE_Y1 } from '../../config';
+import { DEPTH, ROOM_H, ROOM_W, TILE, DOOR_SIDE_Y0, DOOR_SIDE_Y1 } from '../../config';
 import { Enemy } from '../Enemy';
 import type { AiBrain } from '../ai';
 import type { World } from '../World';
@@ -46,7 +46,7 @@ export class Shockwave implements Hazard {
       .setTint(tint)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setScale(0.3, (h * 1.6) / 64)
-      .setDepth(806);
+      .setDepth(DEPTH.telegraphTop);
     this.dieAt = world.now + 4000;
   }
   update(dt: number, now: number): boolean {
@@ -77,7 +77,7 @@ export class FallingRock implements Hazard {
   private t0: number;
   constructor(private world: World, private x: number, private topY: number, private floorY: number, private delayMs: number, private dmg: number, private cause: string, private tex = 'boss-rock') {
     this.t0 = world.now;
-    this.shadow = world.stage.add.image(x, floorY - 1, FX.glow).setDepth(805).setTint(0xff7a3a).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.2).setScale(0.2, 0.08);
+    this.shadow = world.stage.add.image(x, floorY - 1, FX.glow).setDepth(DEPTH.telegraph).setTint(0xff7a3a).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.2).setScale(0.2, 0.08);
   }
   update(dt: number, now: number): boolean {
     const t = now - this.t0;
@@ -86,7 +86,7 @@ export class FallingRock implements Hazard {
       this.shadow.setAlpha(0.3 + 0.6 * k * (0.75 + 0.25 * Math.sin(t / 50))).setScale(0.2 + k * 0.35, 0.08 + k * 0.06);
       if (Math.random() < 0.25) this.world.juice.burst(this.x + Phaser.Math.Between(-6, 6), this.topY + 4, { count: 1, tint: 0x8a7a6a, speed: [0, 10], gravity: 400, life: [300, 500] });
       if (t >= this.delayMs) {
-        this.rock = this.world.stage.add.image(this.x, this.topY, this.tex).setDepth(806);
+        this.rock = this.world.stage.add.image(this.x, this.topY, this.tex).setDepth(DEPTH.telegraphTop);
       }
       return true;
     }
@@ -125,7 +125,7 @@ export class Eruption implements Hazard {
   private hitDone = false;
   constructor(private world: World, private x: number, private floorY: number, private delayMs: number, private dmg: number, private cause: string, private color = 0xb070ff, private w = 34, private h = 60) {
     this.t0 = world.now;
-    this.g = world.stage.add.graphics().setDepth(805).setBlendMode(Phaser.BlendModes.ADD);
+    this.g = world.stage.add.graphics().setDepth(DEPTH.telegraph).setBlendMode(Phaser.BlendModes.ADD);
   }
   update(_dt: number, now: number): boolean {
     const t = now - this.t0;
@@ -168,7 +168,7 @@ export class TelegraphLine implements Hazard {
   private t0: number;
   constructor(world: World, private from: () => { x: number; y: number }, private to: { x: number; y: number }, private ms: number, private color = 0xff4040) {
     this.t0 = world.now;
-    this.g = world.stage.add.graphics().setDepth(805).setBlendMode(Phaser.BlendModes.ADD);
+    this.g = world.stage.add.graphics().setDepth(DEPTH.telegraph).setBlendMode(Phaser.BlendModes.ADD);
   }
   update(_dt: number, now: number): boolean {
     const t = now - this.t0;
@@ -192,7 +192,7 @@ export class OrbDrop implements Hazard {
   private t0: number;
   constructor(private world: World, private x: number, private y: number, private delayMs: number, private dmg: number, private cause: string, private key: ProjectileKey = 'darkorb', private color = 0xd84060) {
     this.t0 = world.now;
-    this.glow = world.stage.add.image(x, y, FX.glow).setTint(color).setBlendMode(Phaser.BlendModes.ADD).setScale(0.15).setAlpha(0.8).setDepth(806);
+    this.glow = world.stage.add.image(x, y, FX.glow).setTint(color).setBlendMode(Phaser.BlendModes.ADD).setScale(0.15).setAlpha(0.8).setDepth(DEPTH.telegraphTop);
   }
   update(_dt: number, now: number): boolean {
     const t = now - this.t0;
@@ -623,7 +623,7 @@ export class FloorMarker implements Hazard {
   private t0: number;
   constructor(world: World, public x: number, private y: number, private ms: number, private color = 0xff4040, private w = 40) {
     this.t0 = world.now;
-    this.g = world.stage.add.graphics().setDepth(805).setBlendMode(Phaser.BlendModes.ADD);
+    this.g = world.stage.add.graphics().setDepth(DEPTH.telegraph).setBlendMode(Phaser.BlendModes.ADD);
   }
   update(_dt: number, now: number): boolean {
     const t = now - this.t0;
@@ -646,7 +646,7 @@ export class RadiusWarning implements Hazard {
   private t0: number;
   constructor(world: World, private src: () => { x: number; y: number }, private r: number, private ms: number, private color = 0xff5050) {
     this.t0 = world.now;
-    this.g = world.stage.add.graphics().setDepth(805).setBlendMode(Phaser.BlendModes.ADD);
+    this.g = world.stage.add.graphics().setDepth(DEPTH.telegraph).setBlendMode(Phaser.BlendModes.ADD);
   }
   update(_dt: number, now: number): boolean {
     const t = now - this.t0;

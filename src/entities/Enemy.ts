@@ -9,7 +9,7 @@ import { STATUS_COLORS } from '../art/palette';
 import { audio } from '../core/audio';
 import { statusDefaults } from '../combat/damage';
 import type { EliteAffix, EnemyDef, StatusId } from '../data/types';
-import { TILE } from '../config';
+import { DEPTH, TILE } from '../config';
 import { Tile } from '../data/types';
 import { createBrain, type AiBrain } from './ai';
 import type { PlayerHit, World } from './World';
@@ -189,7 +189,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.hpBarY = y;
     const g = this.hpBar.setPosition(0, 0).clear();
     g.fillStyle(0x000000, 0.7).fillRect(x - 1, y - 1, w + 2, 4);
-    g.fillStyle(this.elite ? 0xffb02e : 0xd8383a, 1).fillRect(x, y, Math.max(0, Math.round((w * this.hp) / this.maxHp)), 2);
+    g.fillStyle(this.elite ? 0xffb02e : 0xd8383a, 1).fillRect(x, y, fill, 2);
   }
 
   // ---- statuses ------------------------------------------------------------------
@@ -423,8 +423,19 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     // A red glint above the darkness layer so windups read even in unlit areas.
     const sc = this.world.stage;
     if (sc.textures.exists(FX.glow)) {
-      const g = sc.add.image(this.centerX, this.body.top - 2, FX.glow).setTint(0xff3a3a).setBlendMode(Phaser.BlendModes.ADD).setDepth(805).setScale(0.3).setAlpha(0.9);
-      sc.tweens.add({ targets: g, alpha: 0, scale: 0.15, duration: 320, ease: 'Cubic.easeIn', onComplete: () => g.destroy() });
+      const g = sc.add.image(this.centerX, this.body.top - 2, FX.glow).setTint(0xff3a3a).setBlendMode(Phaser.BlendModes.ADD).setDepth(DEPTH.telegraph).setScale(0.3).setAlpha(0.9);
+      sc.tweens.add({
+        targets: g,
+        alpha: 0,
+        scale: 0.15,
+        duration: 320,
+        ease: 'Cubic.easeIn',
+        // Track the enemy so the cue stays on moving attackers (flyers, divers).
+        onUpdate: () => {
+          if (this.active) g.setPosition(this.centerX, this.body.top - 2);
+        },
+        onComplete: () => g.destroy(),
+      });
     }
     this.world.stage.time.delayedCall(90, () => {
       if (this.alive && !this.frozen) this.clearTint();
